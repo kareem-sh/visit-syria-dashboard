@@ -245,6 +245,12 @@
   font-weight: 700;
 }
 
+.text-body-bold-12-auto {
+  font-size: 12px;
+  line-height: normal;
+  font-weight: 700;
+}
+
 /* Paragraphs - Regular */
 .text-body-regular-16 {
   font-size: 16px;
