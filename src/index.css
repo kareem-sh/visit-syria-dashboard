@@ -175,6 +175,12 @@
   line-height: normal;
 }
 
+.text-h1-bold-32 {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: normal;
+}
+
 /* Heading 2 - Bold */
 .text-h2-bold-20 {
   font-size: 20px;
@@ -265,5 +271,4 @@
   .card {
     @apply bg-(--bg-card) rounded-xl p-4 shadow-sm;
   }
-
 }
