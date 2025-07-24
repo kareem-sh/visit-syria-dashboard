@@ -1,0 +1,269 @@
+/* index.css or globals.css */
+
+/* Import Tailwind's base styles */
+@import "tailwindcss";
+
+@font-face {
+  font-family: "BC Arabic";
+  src: url("src/assets/fonts/ArbFONTS-BritishCouncil-Arabic-Regular.ttf")
+    format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BC Arabic";
+  src: url("src/assets/fonts/ArbFONTS-BritishCouncil-Arabic-Bold.ttf")
+    format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BC Arabic";
+  src: url("src/assets/fonts/ArbFONTS-BritishCouncil-Arabic-Black.ttf")
+    format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Define your color palette */
+@theme {
+  --color-emerald-50: #fbfefd;
+  --color-emerald-100: #c2f5e9;
+  --color-emerald-200: #85ead3;
+  --color-emerald-300: #4ce1be;
+  --color-emerald-400: #21c49e;
+  --color-emerald-450: #1ca686;
+  --color-emerald-500: #17876d;
+  --color-emerald-600: #136d58;
+  --color-emerald-700: #0e5343;
+  --color-emerald-750: #0b4135;
+  --color-emerald-800: #09342a;
+  --color-emerald-900: #041a15;
+  --color-emerald-950: #020d0b;
+
+  --color-red-50: #fbeaea;
+  --color-red-100: #f6d0d0;
+  --color-red-200: #eca1a1;
+  --color-red-300: #e37272;
+  --color-red-400: #da4444;
+  --color-red-500: #c02626;
+  --color-red-600: #991e1e;
+  --color-red-700: #731717;
+  --color-red-800: #4d0f0f;
+  --color-red-900: #260808;
+  --color-red-950: #150404;
+
+  --color-grey-50: #f7f8f8;
+  --color-grey-100: #eff1f0;
+  --color-grey-200: #dfe2e1;
+  --color-grey-300: #d1d6d5;
+  --color-grey-400: #c1c8c6;
+  --color-grey-500: #b1b9b7;
+  --color-grey-600: #8b9794;
+  --color-grey-700: #687471;
+  --color-grey-800: #444b49;
+  --color-grey-900: #222625;
+  --color-grey-950: #111312;
+
+  --color-gold-50: #faf5eb;
+  --color-gold-100: #f6edda;
+  --color-gold-200: #eddab6;
+  --color-gold-300: #e3c891;
+  --color-gold-400: #dab66c;
+  --color-gold-500: #d1a347;
+  --color-gold-600: #b4872d;
+  --color-gold-700: #876522;
+  --color-gold-800: #5a4316;
+  --color-gold-900: #2d220b;
+  --color-gold-950: #140f05;
+
+  /* Define main semantic colors */
+  --color-black: var(--color-emerald-950);
+  --color-white: var(--color-emerald-50);
+  --color-grey: var(--color-grey-500);
+  --color-green: var(--color-emerald-450);
+  --color-gold: var(--color-gold-500);
+  --color-red: var(--color-red-500);
+
+  /* Define background colors */
+  --bg-dashboard: var(--color-grey-100);
+  --bg-card: var(--color-white);
+  --bg-green: rgba(var(--color-emerald-450), 0.1);
+  --bg-red: rgba(var(--color-red-500), 0.1);
+  --bg-gold: rgba(var(--color-gold-500), 0.1);
+  --bg-grey-10: rgba(var(--color-grey-500), 0.1);
+  --bg-grey-20: rgba(var(--color-grey-500), 0.2);
+  --bg-grey-30: rgba(var(--color-grey-500), 0.3);
+
+  /* Define text colors */
+  --text-title: var(--color-black);
+  --text-title-inverse: var(--color-white);
+  --text-paragraph: var(--color-grey-800);
+  --text-paragraph-inverse: var(--color-grey-100);
+  --text-see-all: var(--color-grey);
+
+  /* Define text field states */
+  --text-field-hint: var(--color-grey);
+  --text-field-hovered: var(--color-grey-100);
+  --text-field-focused: var(--color-black);
+  --text-field-disabled: var(--color-grey-200);
+  --text-field-success: var(--color-green);
+  --text-field-error: var(--color-red);
+  --text-field-inactive: var(--color-grey-300);
+}
+@layer base {
+  body {
+    font-family: "BC Arabic", sans-serif;
+  }
+}
+
+/* Heading 1 - Regular */
+.text-h1-regular {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 400;
+}
+.text-h1-regular-auto {
+  font-size: 32px;
+  line-height: normal;
+  font-weight: 400;
+}
+
+/* Heading 1 - Black */
+.text-h1-black-24 {
+  font-size: 24px;
+  font-weight: 900;
+  line-height: normal;
+}
+
+.text-h1-black-22 {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: normal;
+}
+
+.text-h1-black-40 {
+  font-size: 40px;
+  font-weight: 900;
+  line-height: normal;
+}
+
+.text-h1-black-32 {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 900;
+}
+.text-h1-black-32-auto {
+  font-size: 32px;
+  line-height: normal;
+  font-weight: 900;
+}
+
+/* Heading 1 - Bold */
+.text-h1-bold-24 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.text-h1-bold-22 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+/* Heading 2 - Bold */
+.text-h2-bold-20 {
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 700;
+}
+.text-h2-bold-20-auto {
+  font-size: 20px;
+  line-height: normal;
+  font-weight: 700;
+}
+
+.text-h2-bold-18 {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.text-h2-bold-16 {
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.text-h2-bold-16-auto {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 700;
+}
+
+/* Heading 2 - Regular */
+.text-h2-regular-20 {
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 400;
+}
+.text-h2-regular-20-auto {
+  font-size: 20px;
+  line-height: normal;
+  font-weight: 400;
+}
+
+/* Paragraphs - Bold */
+.text-body-bold-16 {
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.text-body-bold-16-auto {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 700;
+}
+
+.text-body-bold-14 {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.text-body-bold-14-auto {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 700;
+}
+
+/* Paragraphs - Regular */
+.text-body-regular-16 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+.text-body-regular-16-auto {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+}
+
+.text-body-regular-14 {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.text-body-regular-14-auto {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+}
+@layer components {
+  .card {
+    @apply bg-(--bg-card) rounded-xl p-4 shadow-sm;
+  }
+
+}
