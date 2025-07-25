@@ -37,6 +37,13 @@ export default function Chart({ title, labels, values, color = "#2FB686" }) {
             },
             x: {
                 grid: { display: false },
+                ticks: {
+                    font: {
+                        family: 'BC Arabic',
+                        size: 14,
+                        weight: '700',
+                    },
+                },
             },
         },
         plugins: {

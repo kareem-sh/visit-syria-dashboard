@@ -21,8 +21,8 @@ const Table = ({
   const dropdownRef = useRef(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const { isSidebarOpen } = useSidebar(); // added sidebar state
-  const tableWidth = isSidebarOpen ? 860 : 940; // dynamic width adjustment
+  const { isSidebarOpen } = useSidebar();
+  const tableWidth = isSidebarOpen ? 860 : 940;
 
   const filterOptions = [
     "حسب التاريخ (الأقدم)",
@@ -183,11 +183,23 @@ const Table = ({
                         key={colIndex}
                         className="flex items-center justify-center gap-2 truncate text-center"
                     >
-                      {col.accessor === "status"
-                          ? renderStatusBadge(row[col.accessor])
-                          : col.render
-                              ? col.render(row[col.accessor], row)
-                              : row[col.accessor]}
+                      {col.accessor === "company" ? (
+                          <div className="flex items-center gap-2">
+                            {/* Small circular thumbnail */}
+                            <img
+                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(row.company)}&size=32`}
+                                alt={row.company}
+                                className="w-6 h-6 rounded-full flex-shrink-0"
+                            />
+                            <span>{row.company}</span>
+                          </div>
+                      ) : col.accessor === "status" ? (
+                          renderStatusBadge(row[col.accessor])
+                      ) : col.render ? (
+                          col.render(row[col.accessor], row)
+                      ) : (
+                          row[col.accessor]
+                      )}
                     </div>
                 ))}
               </div>
