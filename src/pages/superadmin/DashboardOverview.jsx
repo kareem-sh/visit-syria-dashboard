@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from "react";
 import StatCard from "@/components/common/StatCard";
 import Table from "@/components/common/Table.jsx";
+import Chart from "@/components/common/Chart.jsx";
+
 import moneyIcon from "@/assets/icons/stats card/Stats Card Icons money.svg";
 import userIcon from "@/assets/icons/stats card/Stats Card Icons user.svg";
 import starIcon from "@/assets/icons/stats card/Stats Card Icons rating.svg";
@@ -40,7 +42,6 @@ const statsData = [
   },
 ];
 
-// 🟢 Sample columns and data
 const columns = [
   { header: "الرقم التعريفي", accessor: "id" },
   { header: "اسم الرحلة", accessor: "tripName" },
@@ -105,65 +106,71 @@ const DashboardOverview = () => {
 
     switch (filterOption) {
       case "حسب التاريخ (الأحدث)":
-        // Sort by newest date
         newData.sort((a, b) => {
           const dateA = new Date(a.date.split("/").reverse().join("-"));
           const dateB = new Date(b.date.split("/").reverse().join("-"));
           return dateB - dateA;
         });
         break;
-
       case "حسب التاريخ (الأقدم)":
-        // Sort by oldest date
         newData.sort((a, b) => {
           const dateA = new Date(a.date.split("/").reverse().join("-"));
           const dateB = new Date(b.date.split("/").reverse().join("-"));
           return dateA - dateB;
         });
         break;
-
       case "حسب الحالة (منتهية)":
         newData = newData.filter((item) => item.status === "منتهية");
         break;
-
       case "حسب الحالة (تم الإلغاء)":
         newData = newData.filter((item) => item.status === "تم الإلغاء");
         break;
-
       case "حسب الحالة (جارية الآن)":
         newData = newData.filter((item) => item.status === "جارية حالياً");
         break;
-
       case "حسب الحالة (لم تبدأ بعد)":
         newData = newData.filter((item) => item.status === "لم تبدأ بعد");
         break;
-
       default:
-        // Keep original data
         break;
     }
 
     setFilteredData(newData);
   }, []);
 
-  return (
-    <div>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {statsData.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
-      </div>
+  const topCompanyLabels = ["العقاد", "سوريا تورز", "الريحان"];
+  const topCompanyTrips = [10, 25, 20];
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        data={filteredData}
-        title="الرحلات"
-        currentFilter={currentFilter}
-        onFilterChange={handleFilterChange}
-      />
-    </div>
+  return (
+      <div dir="rtl" className="space-y-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {statsData.map((stat, index) => (
+              <StatCard key={index} {...stat} />
+          ))}
+        </div>
+
+        {/* Chart and Table side-by-side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-100 items-start">
+          {/* Chart on the left (in RTL) */}
+
+          {/* Table on the right */}
+          <Table
+              columns={columns}
+              data={filteredData}
+              title="الرحلات"
+              currentFilter={currentFilter}
+              onFilterChange={handleFilterChange}
+          />
+
+          <Chart
+              title="أفضل الشركات"
+              labels={topCompanyLabels}
+              values={topCompanyTrips}
+              color="#2FB686"
+          />
+        </div>
+      </div>
   );
 };
 

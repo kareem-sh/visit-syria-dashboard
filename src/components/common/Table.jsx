@@ -6,6 +6,7 @@ import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import doneIcon from "@/assets/icons/table/done small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
+import { useSidebar } from "@/contexts/SidebarContext.jsx"; // <-- Adjust this path to your actual hook location
 
 const Table = ({
                  columns,
@@ -20,6 +21,9 @@ const Table = ({
   const dropdownRef = useRef(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  const { isSidebarOpen } = useSidebar(); // added sidebar state
+  const tableWidth = isSidebarOpen ? 860 : 940; // dynamic width adjustment
+
   const filterOptions = [
     "حسب التاريخ (الأقدم)",
     "حسب التاريخ (الأحدث)",
@@ -29,7 +33,6 @@ const Table = ({
     "حسب الحالة (لم تبدأ بعد)",
   ];
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -95,9 +98,12 @@ const Table = ({
   };
 
   return (
-      <div className={`overflow-visible relative z-10 ${width}`} dir="rtl">
+      <div className={`overflow-visible relative z-10 ${width}`}>
         {/* Table Header */}
-        <div className="flex items-center justify-between w-[950px] h-[59px] gap-[16px] px-[16px] mt-[24px]">
+        <div
+            className="flex items-center justify-between w-[860px] h-[59px] gap-[16px] px-[16px] mt-[-16px]"
+            style={{ width: tableWidth }}
+        >
           <h2 className="text-h1-bold-24 text-gray-700">{title}</h2>
 
           {/* Filter & See All */}
@@ -156,7 +162,10 @@ const Table = ({
         </div>
 
         {/* Table Content */}
-        <div className={`flex flex-col ${rowGap} w-[950px]`}>
+        <div
+            className={`flex flex-col ${rowGap} w-[860px]`}
+            style={{ width: tableWidth }}
+        >
           <div className="grid grid-cols-5 text-center bg-white px-[16px] py-[30px] rounded-xl font-bold text-gray-600 text-sm h-[75px]">
             {columns.map((col, idx) => (
                 <div key={idx}>{col.header}</div>
