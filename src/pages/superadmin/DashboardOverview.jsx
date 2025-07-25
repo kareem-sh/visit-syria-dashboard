@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import StatCard from "@/components/common/StatCard";
 import Table from "@/components/common/Table.jsx";
 import Chart from "@/components/common/Chart.jsx";
+import RatingTable from "@/components/common/RatingTable.jsx";
 
 import moneyIcon from "@/assets/icons/stats card/Stats Card Icons money.svg";
 import userIcon from "@/assets/icons/stats card/Stats Card Icons user.svg";
@@ -95,6 +96,12 @@ const data = [
   },
 ];
 
+const topPlacesData = [
+  { id: 1, name: "مطعم الشام", rating: 4.8 },
+  { id: 2, name: "فندق الأموي", rating: 4.6 },
+  { id: 3, name: "مقهى النور", rating: 4.2 },
+];
+
 const DashboardOverview = () => {
   const [filteredData, setFilteredData] = useState(data);
   const [currentFilter, setCurrentFilter] = useState("الكل");
@@ -142,35 +149,53 @@ const DashboardOverview = () => {
   const topCompanyTrips = [10, 25, 20];
 
   return (
-      <div dir="rtl" className="space-y-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {statsData.map((stat, index) => (
-              <StatCard key={index} {...stat} />
-          ))}
+    <div dir="rtl" className="space-y-8 px-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {statsData.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-6 items-start">
+        {/* Right Side (65%) - Trips Table */}
+        <div>
+          <Table
+            columns={columns}
+            data={filteredData}
+            title="الرحلات"
+            currentFilter={currentFilter}
+            onFilterChange={handleFilterChange}
+          />
         </div>
 
-        {/* Chart and Table side-by-side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-100 items-start">
-          {/* Chart on the left (in RTL) */}
+        {/* Left Side (35%) - Chart and Rating Table */}
+        <div className="flex flex-col gap-6">
+          {/* Chart Section */}
+          <div>
+            <h2 className="text-right text-h1-bold-24 mb-4 text-gray-700 mt-4.5">
+              أفضل الشركات
+            </h2>
+            <div className="shadow rounded-2xl overflow-hidden">
+              <Chart
+                labels={topCompanyLabels}
+                values={topCompanyTrips}
+                color="#2FB686"
+              />
+            </div>
+          </div>
 
-          {/* Table on the right */}
-          <Table
-              columns={columns}
-              data={filteredData}
-              title="الرحلات"
-              currentFilter={currentFilter}
-              onFilterChange={handleFilterChange}
-          />
-
-          <Chart
-              title="أفضل الشركات"
-              labels={topCompanyLabels}
-              values={topCompanyTrips}
-              color="#2FB686"
-          />
+          {/* Rating Table Section */}
+          <div>
+            <h2 className="text-right text-h1-bold-24 mb-4 text-gray-700">
+              أفضل الأماكن
+            </h2>
+            <RatingTable data={topPlacesData} />
+          </div>
         </div>
       </div>
+    </div>
   );
 };
 

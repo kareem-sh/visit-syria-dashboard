@@ -6,13 +6,12 @@ import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import doneIcon from "@/assets/icons/table/done small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
-import { useSidebar } from "@/contexts/SidebarContext.jsx"; // <-- Adjust this path to your actual hook location
+import { useSidebar } from "@/contexts/SidebarContext";
 
 const Table = ({
                  columns,
                  data,
                  rowGap = "space-y-4",
-                 width = "w-full",
                  title,
                  currentFilter = "الكل",
                  onFilterChange,
@@ -20,37 +19,6 @@ const Table = ({
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  const { isSidebarOpen } = useSidebar();
-  const tableWidth = isSidebarOpen ? 860 : 940;
-
-  const filterOptions = [
-    "حسب التاريخ (الأقدم)",
-    "حسب التاريخ (الأحدث)",
-    "حسب الحالة (منتهية)",
-    "حسب الحالة (تم الإلغاء)",
-    "حسب الحالة (جارية الآن)",
-    "حسب الحالة (لم تبدأ بعد)",
-  ];
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsFilterOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
-
-  const handleFilterSelect = (option) => {
-    setIsFilterOpen(false);
-    if (onFilterChange) {
-      onFilterChange(option);
-    }
-  };
 
   const renderStatusBadge = (status) => {
     let icon, bgColor, textColor;
@@ -89,24 +57,40 @@ const Table = ({
     );
   };
 
-  const handleSeeAllClick = () => {
-    navigate("/trips");
+  const handleSeeAllClick = () => navigate("/trips");
+  const handleRowClick = (tripId) => navigate(`/trip/${tripId}`);
+  const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
+
+  const handleFilterSelect = (option) => {
+    setIsFilterOpen(false);
+    onFilterChange?.(option);
   };
 
-  const handleRowClick = (tripId) => {
-    navigate(`/trip/${tripId}`);
-  };
+  const filterOptions = [
+    "حسب التاريخ (الأقدم)",
+    "حسب التاريخ (الأحدث)",
+    "حسب الحالة (منتهية)",
+    "حسب الحالة (تم الإلغاء)",
+    "حسب الحالة (جارية الآن)",
+    "حسب الحالة (لم تبدأ بعد)",
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-      <div className={`overflow-visible relative z-10 ${width}`}>
+      <div className="overflow-visible relative z-10 w-full">
         {/* Table Header */}
-        <div
-            className="flex items-center justify-between w-[860px] h-[59px] gap-[16px] px-[16px] mt-[-16px]"
-            style={{ width: tableWidth }}
-        >
+        <div className="flex items-center justify-between w-full h-[59px] gap-[16px] px-[16px]">
           <h2 className="text-h1-bold-24 text-gray-700">{title}</h2>
 
-          {/* Filter & See All */}
           <div className="flex items-center gap-4">
             <div className="relative" ref={dropdownRef}>
               <div
@@ -122,15 +106,8 @@ const Table = ({
                 />
               </div>
 
-              {/* Dropdown */}
               {isFilterOpen && (
-                  <div
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200"
-                      style={{
-                        overflow: "visible",
-                        maxHeight: "none",
-                      }}
-                  >
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200">
                     <div className="py-1">
                       {filterOptions.map((option) => (
                           <div
@@ -162,10 +139,7 @@ const Table = ({
         </div>
 
         {/* Table Content */}
-        <div
-            className={`flex flex-col ${rowGap} w-[860px]`}
-            style={{ width: tableWidth }}
-        >
+        <div className={`flex flex-col ${rowGap} w-full`}>
           <div className="grid grid-cols-5 text-center bg-white px-[16px] py-[30px] rounded-xl font-bold text-gray-600 text-sm h-[75px]">
             {columns.map((col, idx) => (
                 <div key={idx}>{col.header}</div>
@@ -185,7 +159,6 @@ const Table = ({
                     >
                       {col.accessor === "company" ? (
                           <div className="flex items-center gap-2">
-                            {/* Small circular thumbnail */}
                             <img
                                 src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(row.company)}&size=32`}
                                 alt={row.company}

@@ -1,3 +1,4 @@
+// MainLayout.jsx
 import { useSidebar } from "@/contexts/SidebarContext";
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -25,7 +26,9 @@ const MainLayout = ({ children, noScroll = false }) => {
                         borderLeft: "1px solid var(--border-color)",
                     }}
                 >
-                    {children}
+                    <div className="max-w-full mx-auto">
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>

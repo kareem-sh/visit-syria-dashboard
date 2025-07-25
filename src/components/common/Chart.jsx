@@ -1,4 +1,3 @@
-// Chart.jsx
 import { Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -11,7 +10,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-export default function Chart({ title, labels, values, color = "#2FB686" }) {
+export default function Chart({ labels, values, color = "#2FB686" }) {
     const data = {
         labels,
         datasets: [
@@ -52,11 +51,8 @@ export default function Chart({ title, labels, values, color = "#2FB686" }) {
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow p-6 w-full max-w-xl mx-auto">
-            <h2 className="text-right text-h1-bold-24 mb-4">{title}</h2>
-            <div className="h-72">
-                <Bar data={data} options={options} />
-            </div>
+        <div className="bg-white p-6 w-full h-72">
+            <Bar data={data} options={options} />
         </div>
     );
 }
