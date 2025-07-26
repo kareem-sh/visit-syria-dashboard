@@ -59,6 +59,7 @@ const data = [
     date: "25/06/2025",
     status: "لم تبدأ بعد",
   },
+
   {
     id: "3405834",
     tripName: "رحلة سوريا السياحية",
@@ -146,10 +147,10 @@ const DashboardOverview = () => {
   }, []);
 
   const topCompanyLabels = ["العقاد", "سوريا تورز", "الريحان"];
-  const topCompanyTrips = [10, 25, 20];
+  const topCompanyTrips = [10, 60, 20];
 
   return (
-    <div dir="rtl" className="space-y-8 px-4">
+    <div className="space-y-8 px-4">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {statsData.map((stat, index) => (
@@ -158,7 +159,7 @@ const DashboardOverview = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[65%_33.5%] gap-6 items-start">
         {/* Right Side (65%) - Trips Table */}
         <div>
           <Table
@@ -182,6 +183,7 @@ const DashboardOverview = () => {
                 labels={topCompanyLabels}
                 values={topCompanyTrips}
                 color="#2FB686"
+                label="عدد الرحلات"
               />
             </div>
           </div>

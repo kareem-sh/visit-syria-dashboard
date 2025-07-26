@@ -6,16 +6,15 @@ import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import doneIcon from "@/assets/icons/table/done small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
-import { useSidebar } from "@/contexts/SidebarContext";
 
 const Table = ({
-                 columns,
-                 data,
-                 rowGap = "space-y-4",
-                 title,
-                 currentFilter = "الكل",
-                 onFilterChange,
-               }) => {
+  columns,
+  data,
+  rowGap = "space-y-4",
+  title,
+  currentFilter = "الكل",
+  onFilterChange,
+}) => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -48,12 +47,12 @@ const Table = ({
     }
 
     return (
-        <div
-            className={`relative flex items-center justify-center min-w-[100px] h-[32px] px-[8px] py-[6px] rounded-[16px] ${bgColor} ${textColor} box-border leading-none`}
-        >
-          <img src={icon} alt={status} className="w-5 h-5 ml-1" />
-          <span className="text-body-regular-14-auto">{status}</span>
-        </div>
+      <div
+        className={`relative flex items-center justify-center min-w-[100px] h-[32px] px-[8px] py-[6px] rounded-[16px] ${bgColor} ${textColor} box-border leading-none`}
+      >
+        <img src={icon} alt={status} className="w-5 h-5 ml-1" />
+        <span className="text-body-regular-14-auto">{status}</span>
+      </div>
     );
   };
 
@@ -86,99 +85,101 @@ const Table = ({
   }, []);
 
   return (
-      <div className="overflow-visible relative z-10 w-full">
-        {/* Table Header */}
-        <div className="flex items-center justify-between w-full h-[59px] gap-[16px] px-[16px]">
-          <h2 className="text-h1-bold-24 text-gray-700">{title}</h2>
+    <div className="overflow-visible relative z-10 w-full">
+      {/* Table Header */}
+      <div className="flex items-center justify-between w-full h-[59px] gap-[16px] px-[16px]">
+        <h2 className="text-h1-bold-24 text-gray-700">{title}</h2>
 
-          <div className="flex items-center gap-4">
-            <div className="relative" ref={dropdownRef}>
-              <div
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer"
-                  onClick={toggleFilter}
-              >
-                <img src={filterIcon} alt="dropdown filter Icon" />
-                <span className="text-body-bold-14-auto">فرز حسب</span>
-                <FiChevronDown
-                    className={`text-black transition-transform ${
-                        isFilterOpen ? "rotate-180" : ""
-                    }`}
-                />
-              </div>
-
-              {isFilterOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200">
-                    <div className="py-1">
-                      {filterOptions.map((option) => (
-                          <div
-                              key={option}
-                              className={`px-6 py-2 text-body-bold-14-auto cursor-pointer hover:bg-emerald-400 hover:text-white text-center ${
-                                  currentFilter === option
-                                      ? "bg-gray-100 text-primary"
-                                      : "text-gray-700"
-                              }`}
-                              onClick={() => handleFilterSelect(option)}
-                          >
-                            {option}
-                          </div>
-                      ))}
-                    </div>
-                  </div>
-              )}
+        <div className="flex items-center gap-4">
+          <div className="relative" ref={dropdownRef}>
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer"
+              onClick={toggleFilter}
+            >
+              <img src={filterIcon} alt="dropdown filter Icon" />
+              <span className="text-body-bold-14-auto">فرز حسب</span>
+              <FiChevronDown
+                className={`text-black transition-transform ${
+                  isFilterOpen ? "rotate-180" : ""
+                }`}
+              />
             </div>
 
-            <div
-                className="flex items-center text-primary cursor-pointer hover:text-primary-dark transition-colors"
-                onClick={handleSeeAllClick}
-            >
+            {isFilterOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                <div className="py-1">
+                  {filterOptions.map((option) => (
+                    <div
+                      key={option}
+                      className={`px-6 py-2 text-body-bold-14-auto cursor-pointer hover:bg-emerald-400 hover:text-white text-center ${
+                        currentFilter === option
+                          ? "bg-gray-100 text-primary"
+                          : "text-gray-700"
+                      }`}
+                      onClick={() => handleFilterSelect(option)}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div
+            className="flex items-center text-primary cursor-pointer hover:text-primary-dark transition-colors"
+            onClick={handleSeeAllClick}
+          >
             <span className="text-body-regular-14 text-(--text-see-all)">
               مشاهدة الكل
             </span>
-            </div>
           </div>
-        </div>
-
-        {/* Table Content */}
-        <div className={`flex flex-col ${rowGap} w-full`}>
-          <div className="grid grid-cols-5 text-center bg-white px-[16px] py-[30px] rounded-xl font-bold text-gray-600 text-sm h-[75px]">
-            {columns.map((col, idx) => (
-                <div key={idx}>{col.header}</div>
-            ))}
-          </div>
-
-          {data.map((row, rowIndex) => (
-              <div
-                  key={rowIndex}
-                  className="grid grid-cols-5 bg-white px-[16px] rounded-2xl shadow-sm text-sm text-gray-700 h-[75px] cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleRowClick(row.id)}
-              >
-                {columns.map((col, colIndex) => (
-                    <div
-                        key={colIndex}
-                        className="flex items-center justify-center gap-2 truncate text-center"
-                    >
-                      {col.accessor === "company" ? (
-                          <div className="flex items-center gap-2">
-                            <img
-                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(row.company)}&size=32`}
-                                alt={row.company}
-                                className="w-6 h-6 rounded-full flex-shrink-0"
-                            />
-                            <span>{row.company}</span>
-                          </div>
-                      ) : col.accessor === "status" ? (
-                          renderStatusBadge(row[col.accessor])
-                      ) : col.render ? (
-                          col.render(row[col.accessor], row)
-                      ) : (
-                          row[col.accessor]
-                      )}
-                    </div>
-                ))}
-              </div>
-          ))}
         </div>
       </div>
+
+      {/* Table Content */}
+      <div className={`flex flex-col ${rowGap} w-full`}>
+        <div className="grid grid-cols-5 text-center bg-white px-[16px] py-[30px] rounded-xl font-bold text-gray-600 text-sm h-[75px]">
+          {columns.map((col, idx) => (
+            <div key={idx}>{col.header}</div>
+          ))}
+        </div>
+
+        {data.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            className="grid grid-cols-5 bg-white px-[16px] rounded-2xl shadow-sm text-sm text-gray-700 h-[75px] cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleRowClick(row.id)}
+          >
+            {columns.map((col, colIndex) => (
+              <div
+                key={colIndex}
+                className="flex items-center justify-center gap-2 truncate text-center"
+              >
+                {col.accessor === "company" ? (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+                        row.company
+                      )}&size=32`}
+                      alt={row.company}
+                      className="w-6 h-6 rounded-full flex-shrink-0"
+                    />
+                    <span>{row.company}</span>
+                  </div>
+                ) : col.accessor === "status" ? (
+                  renderStatusBadge(row[col.accessor])
+                ) : col.render ? (
+                  col.render(row[col.accessor], row)
+                ) : (
+                  row[col.accessor]
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
