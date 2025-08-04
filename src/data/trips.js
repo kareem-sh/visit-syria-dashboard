@@ -2,7 +2,7 @@
 import Image1 from "@/assets/images/image1.svg";
 import Image2 from "@/assets/images/image2.svg";
 import Image3 from "@/assets/images/image3.svg";
-import Image4 from "@/assets/images/image4.svg"
+import Image4 from "@/assets/images/image4.svg";
 const trips = [
   {
     id: "5765",
@@ -10,6 +10,7 @@ const trips = [
     company: "التعاون",
     date: "25/06/2025",
     status: "لم تبدأ بعد",
+    images: [Image1, Image2, Image3, Image4],
   },
   {
     id: "3405834",
@@ -17,6 +18,7 @@ const trips = [
     company: "النورس",
     date: "31/08/2025",
     status: "منتهية",
+    images: [Image1, Image2, Image3, Image4],
   },
   {
     id: "54983",
@@ -24,6 +26,7 @@ const trips = [
     company: "الصفاء",
     date: "20/10/2025",
     status: "جارية حالياً",
+    images: [Image1, Image2, Image3, Image4],
   },
   {
     id: "349834",
@@ -31,6 +34,7 @@ const trips = [
     company: "زهور الشام",
     date: "04/09/2025",
     status: "تم الإلغاء",
+    images: [Image1, Image2, Image3, Image4],
   },
   {
     id: "349835",
@@ -38,6 +42,7 @@ const trips = [
     company: "زهور الشام",
     date: "05/09/2025",
     status: "لم تبدأ بعد",
+    images: [Image1, Image2, Image3, Image4],
   },
   {
     id: "349836",
@@ -45,6 +50,7 @@ const trips = [
     company: "زهور الشام",
     date: "06/09/2025",
     status: "جارية حالياً",
+    images: [Image1, Image2, Image3, Image4],
   },
 ];
 

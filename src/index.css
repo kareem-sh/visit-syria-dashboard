@@ -273,6 +273,13 @@
   line-height: normal;
   font-weight: 400;
 }
+
+/*captions */
+.text-body-caption-10-auto {
+  font-size: 10px;
+  line-height: normal;
+  font-weight: 200;
+}
 @layer components {
   .card {
     @apply bg-(--bg-card) rounded-xl p-4 shadow-sm;

@@ -1,18 +1,39 @@
-// components/details/CommentsSection.jsx
 import React from "react";
+import { FaStar } from "react-icons/fa";
 
-const CommentsSection = ({ comments, variant = "default" }) => {
-  return (
-    <div className={`comments-section ${variant}`}>
-      <h3>Comments</h3>
-      {comments.map((comment, idx) => (
-        <div key={idx} className="comment">
-          <p>{comment.text}</p>
-          <small>{comment.author}</small>
+const CommentsSection = ({ comments }) => {
+    return (
+        <div className="card flex-1 overflow-y-auto flex flex-col gap-4 p-4">
+            {comments.map((comment, idx) => (
+                <div
+                    key={idx}
+                    className="flex items-start justify-between gap-4 p-2"
+                >
+                    {/* Avatar + Text on the left */}
+                    <div className="flex flex-col items-start flex-1">
+                        <div className="flex items-center gap-2">
+                            <img
+                                src={comment.avatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
+                                alt="avatar"
+                                className="w-10 h-10 rounded-full object-cover"
+                            />
+                            <div>
+                                <h4 className="font-semibold text-sm">{comment.author}</h4>
+                                <span className="text-xs text-gray-400">{comment.date}</span>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-2">{comment.text}</p>
+                    </div>
+
+                    {/* Rating on the right */}
+                    <div className="flex items-center text-yellow-500 text-sm gap-1 min-w-[60px]">
+                        <FaStar />
+                        <span>{comment.rating || "4.5"}/5</span>
+                    </div>
+                </div>
+            ))}
         </div>
-      ))}
-    </div>
-  );
+    );
 };
 
 export default CommentsSection;

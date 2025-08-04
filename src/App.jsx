@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import DashboardOverview from "@/pages/superadmin/dashboard-status/DashboardOverview";
 import Trips from "@/pages/superadmin/dashboard-status/Trips";
 import Profits from "@/pages/superadmin/dashboard-status/profits";
-import TripDetailsPage from "./pages/superadmin/trips/TripDetailsPage";
+import TripDetailsPage from "./pages/superadmin/trips/DetailsPage.jsx";
 const App = () => {
   return (
     <SidebarProvider>

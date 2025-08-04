@@ -1,48 +1,60 @@
-// components/details/ImageSection.jsx
-import React from "react";
 
-const ImageSection = ({ mainImage, secondaryImage, layout = "default" }) => {
-  if (layout === "event") {
-    return (
-      <div
-        className="image-section image-event-layout"
-        style={{ display: "flex" }}
-      >
-        <div className="secondary-image" style={{ marginRight: "1rem" }}>
-          <img
-            src={secondaryImage}
-            alt="Secondary"
-            style={{ width: "150px" }}
-          />
-        </div>
-        <div className="main-image">
-          <img src={mainImage} alt="Main" style={{ width: "100%" }} />
-        </div>
-      </div>
-    );
-  }
+// ImageSection.jsx
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
 
-  // Default layout for hotels, restaurants, places, trips, etc.
-  return (
-    <div
-      className="image-section image-default-layout"
-      style={{ position: "relative" }}
-    >
-      <img src={mainImage} alt="Main" style={{ width: "100%" }} />
-      {secondaryImage && (
+const ImageModal = ({ src, onClose }) => {
+    return createPortal(
         <div
-          className="secondary-image-overlay"
-          style={{ position: "absolute", bottom: "10px", right: "10px" }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/70 flex justify-center items-center z-50"
         >
-          <img
-            src={secondaryImage}
-            alt="Secondary"
-            style={{ width: "150px" }}
-          />
+            <img src={src} alt="Zoomed" className="w-full h-full rounded-lg shadow-lg" />
+        </div>,
+        document.body
+    );
+};
+
+const ImageSection = ({ mainImage, secondaryImages = [], layout = "default" }) => {
+    const [zoomImage, setZoomImage] = useState(null);
+
+    return (
+        <div className="flex flex-col gap-3 w-full">
+            {/* Main Image */}
+            <div
+                className="w-full aspect-[650/300] overflow-hidden rounded-xl shadow cursor-pointer"
+                onClick={() => setZoomImage(mainImage)}
+            >
+                <img
+                    src={mainImage}
+                    alt="Main"
+                    className="w-full h-full object-cover"
+                />
+            </div>
+
+            {/* Thumbnails */}
+            {secondaryImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 w-full">
+                    {secondaryImages.map((img, idx) => (
+                        <div
+                            key={idx}
+                            className="w-full h-[134px] overflow-hidden rounded-xl border border-gray-200 shadow cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => setZoomImage(img)}
+                        >
+                            <img
+                                src={img}
+                                alt={`thumb-${idx}`}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Zoom Image Modal */}
+            {zoomImage && <ImageModal src={zoomImage} onClose={() => setZoomImage(null)} />}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default ImageSection;
