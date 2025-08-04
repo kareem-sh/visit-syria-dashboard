@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import MainLayout from "@/components/layout/MainLayout";
-import DashboardOverview from "@/pages/superadmin/DashboardOverview";
-import Trips from "@/pages/superadmin/Trips";
-import Profits from "./components/common/profits";
+import DashboardOverview from "@/pages/superadmin/dashboard-status/DashboardOverview";
+import Trips from "@/pages/superadmin/dashboard-status/Trips";
+import Profits from "@/pages/superadmin/dashboard-status/profits";
+import TripDetailsPage from "./pages/superadmin/trips/TripDetailsPage";
 const App = () => {
   return (
     <SidebarProvider>
@@ -12,6 +13,7 @@ const App = () => {
           <Route path="/" element={<DashboardOverview />} />
           <Route path="/trips" element={<Trips />} />
           <Route path="/profits" element={<Profits />} />
+          <Route path="/trip/:id" element={<TripDetailsPage />}></Route>
         </Routes>
       </MainLayout>
     </SidebarProvider>

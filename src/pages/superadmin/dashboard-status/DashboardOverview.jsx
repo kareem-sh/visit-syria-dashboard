@@ -3,7 +3,7 @@ import StatCard from "@/components/common/StatCard";
 import Table from "@/components/common/Table.jsx";
 import Chart from "@/components/common/Chart.jsx";
 import RatingTable from "@/components/common/RatingTable.jsx";
-
+import trips from "@/data/trips";
 import moneyIcon from "@/assets/icons/stats card/Stats Card Icons money.svg";
 import userIcon from "@/assets/icons/stats card/Stats Card Icons user.svg";
 import starIcon from "@/assets/icons/stats card/Stats Card Icons rating.svg";
@@ -51,51 +51,7 @@ const columns = [
   { header: "الحالة", accessor: "status" },
 ];
 
-const data = [
-  {
-    id: "5765",
-    tripName: "رحلة في جبلة",
-    company: "التعاون",
-    date: "25/06/2025",
-    status: "لم تبدأ بعد",
-  },
-
-  {
-    id: "3405834",
-    tripName: "رحلة سوريا السياحية",
-    company: "النورس",
-    date: "31/08/2025",
-    status: "منتهية",
-  },
-  {
-    id: "54983",
-    tripName: "جولة في الشرق",
-    company: "الصفاء",
-    date: "20/10/2025",
-    status: "جارية حالياً",
-  },
-  {
-    id: "349834",
-    tripName: "رحلة إلى آثار تدمر",
-    company: "زهور الشام",
-    date: "04/09/2025",
-    status: "تم الإلغاء",
-  },
-  {
-    id: "349835",
-    tripName: "رحلة إلى دمشق القديمة",
-    company: "زهور الشام",
-    date: "05/09/2025",
-    status: "لم تبدأ بعد",
-  },
-  {
-    id: "349836",
-    tripName: "رحلة إلى حلب",
-    company: "زهور الشام",
-    date: "06/09/2025",
-    status: "جارية حالياً",
-  },
-];
+const data = [...trips];
 
 const topPlacesData = [
   { id: 1, name: "مطعم الشام", rating: 4.8 },
