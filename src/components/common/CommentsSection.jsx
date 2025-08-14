@@ -1,37 +1,43 @@
 import React from "react";
 import { FaStar } from "react-icons/fa";
 
-const CommentsSection = ({ comments }) => {
+const CommentsSection = ({ comments, status }) => {
     return (
         <div className="card flex-1 overflow-y-auto flex flex-col gap-4 p-4">
-            {comments.map((comment, idx) => (
-                <div
-                    key={idx}
-                    className="flex items-start justify-between gap-4 p-2"
-                >
-                    {/* Avatar + Text on the left */}
-                    <div className="flex flex-col items-start flex-1">
-                        <div className="flex items-center gap-2">
-                            <img
-                                src={comment.avatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
-                                alt="avatar"
-                                className="w-10 h-10 rounded-full object-cover"
-                            />
-                            <div>
-                                <h4 className="font-semibold text-sm">{comment.author}</h4>
-                                <span className="text-xs text-gray-400">{comment.date}</span>
-                            </div>
-                        </div>
-                        <p className="text-sm text-gray-700 mt-2">{comment.text}</p>
-                    </div>
-
-                    {/* Rating on the right */}
-                    <div className="flex items-center text-yellow-500 text-sm gap-1 min-w-[60px]">
-                        <FaStar />
-                        <span>{comment.rating || "4.5"}/5</span>
-                    </div>
+            {status === "لم تبدأ بعد" || status === "تم الإلغاء" ? (
+                <div className="flex flex-1 items-center justify-center text-gray-500 text-lg font-semibold">
+                    هذه الرحلة لم تبدأ بعد
                 </div>
-            ))}
+            ) : (
+                comments.map((comment, idx) => (
+                    <div
+                        key={idx}
+                        className="flex items-start justify-between gap-4 p-2"
+                    >
+                        {/* Avatar + Text on the left */}
+                        <div className="flex flex-col items-start flex-1">
+                            <div className="flex items-center gap-2">
+                                <img
+                                    src={comment.avatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
+                                    alt="avatar"
+                                    className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <div>
+                                    <h4 className="font-semibold text-sm">{comment.author}</h4>
+                                    <span className="text-xs text-gray-400">{comment.date}</span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-700 mt-2">{comment.text}</p>
+                        </div>
+
+                        {/* Rating on the right */}
+                        <div className="flex items-center text-yellow-500 text-sm gap-1 min-w-[60px]">
+                            <FaStar />
+                            <span>{comment.rating || "4.5"}/5</span>
+                        </div>
+                    </div>
+                ))
+            )}
         </div>
     );
 };

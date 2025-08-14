@@ -5,17 +5,20 @@ import InfoCard from "@/components/common/InfoCard";
 import TripDetails from "@/components/common/TripDetails";
 import LocationSection from "@/components/common/LocationSection";
 import CommentsSection from "@/components/common/CommentsSection";
+import ProductInfoCard from "@/components/common/ProductInfoCard";
+import DayDetails from "@/components/common/DayDetails";
 import { getDataByType } from "@/data/index.js";
 
 const DetailsPage = ({ type = "trip" }) => {
     const { id } = useParams();
-    const data = getDataByType(type);
-    const item = data.find((item) => item.id === id);
+    const data = getDataByType(type) || [];
+    const item = data.find((el) => String(el.id) === String(id));
 
     const imageRef = useRef(null);
     const [imageHeight, setImageHeight] = useState(0);
 
     useEffect(() => {
+        if (!item || !item.images) return;
         const measure = () => {
             if (imageRef.current) {
                 setImageHeight(imageRef.current.clientHeight);
@@ -24,7 +27,7 @@ const DetailsPage = ({ type = "trip" }) => {
         measure();
         window.addEventListener("resize", measure);
         return () => window.removeEventListener("resize", measure);
-    }, [item.images]);
+    }, [item?.images]);
 
     if (!item) {
         return (
@@ -57,26 +60,40 @@ const DetailsPage = ({ type = "trip" }) => {
                         style={{ height: imageHeight, overflowY: "auto" }}
                     >
                         <h3 className="text-h1-bold-22 mb-2">التقييمات و التعليقات</h3>
-                        <CommentsSection comments={item.comments || []} />
+                        <CommentsSection comments={item.comments || []} status={item.status} />
                     </div>
                 </div>
 
-                {/* Info Section */}
-                <InfoCard
-                    info={{
-                        title: item.tripName || item.name,
-                        date: item.date,
-                        company: item.company,
-                        description: item.description,
-                    }}
-                    fullWidth={type === "hotel" || type === "restaurant"}
-                />
+                {/* Product Info Card */}
+                <div className="flex flex-col lg:flex-row gap-4 w-full">
+                    {/* Product Info Card */}
+                    <div className="lg:w-[60%] w-full">
+                        <ProductInfoCard
+                            title={item.tripName}
+                            price={item.price}
+                            capacity={item.capacity}
+                            discount={item.discount}
+                            refNumber={item.refNumber}
+                            rating={item.rating}
+                            tags={item.tags}
+                            description={item.description}
+                            company={item.company}
+                            season={item.season}
+                            duration={item.duration}
+                            date={item.date}
+                            status={item.status}
+                        />
+                    </div>
 
-                {/* Trip specific details */}
-                {type === "trip" && <TripDetails tripData={item} />}
+                    {/* Day Details */}
+                    {item.days && item.days.length > 0 && (
+                        <div className="flex-1 w-full">
+                            <h3 className="text-h1-bold-22 mb-2">جدول الرحلات</h3>
+                            <DayDetails days={item.days} />
+                        </div>
+                    )}
+                </div>
 
-                {/* Location section */}
-                {item.location && <LocationSection location={item.location} fullWidth />}
             </div>
         </div>
     );
