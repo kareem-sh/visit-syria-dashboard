@@ -1,11 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import ImageSection from "@/components/common/ImageSection";
-import InfoCard from "@/components/common/InfoCard";
-import TripDetails from "@/components/common/TripDetails";
-import LocationSection from "@/components/common/LocationSection";
 import CommentsSection from "@/components/common/CommentsSection";
-import ProductInfoCard from "@/components/common/ProductInfoCard";
+import TripInfoCard from "@/components/common/TripInfoCard.jsx";
 import DayDetails from "@/components/common/DayDetails";
 import { getDataByType } from "@/data/index.js";
 
@@ -68,7 +65,7 @@ const DetailsPage = ({ type = "trip" }) => {
                 <div className="flex flex-col lg:flex-row gap-4 w-full">
                     {/* Product Info Card */}
                     <div className="lg:w-[60%] w-full">
-                        <ProductInfoCard
+                        <TripInfoCard
                             title={item.tripName}
                             price={item.price}
                             capacity={item.capacity}

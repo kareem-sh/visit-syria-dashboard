@@ -5,6 +5,10 @@ import DashboardOverview from "@/pages/superadmin/dashboard-status/DashboardOver
 import Trips from "@/pages/superadmin/dashboard-status/Trips";
 import Profits from "@/pages/superadmin/dashboard-status/profits";
 import TripDetailsPage from "./pages/superadmin/trips/DetailsPage.jsx";
+import EventDetails from "@/pages/superadmin/events/EventDetails.jsx";
+import EventForm from "@/components/common/EventForm.jsx";
+
+
 const App = () => {
   return (
     <SidebarProvider>
@@ -14,6 +18,8 @@ const App = () => {
           <Route path="/trips" element={<Trips />} />
           <Route path="/profits" element={<Profits />} />
           <Route path="/trip/:id" element={<TripDetailsPage />}></Route>
+          <Route path="/events" element={<EventDetails />}></Route>
+          <Route path="/dialog-test" element={<EventForm />} />
         </Routes>
       </MainLayout>
     </SidebarProvider>

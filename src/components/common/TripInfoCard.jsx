@@ -8,7 +8,7 @@ import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
 
-export default function ProductInfoCard({
+export default function TripInfoCard({
                                             title,
                                             price,
                                             capacity,

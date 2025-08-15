@@ -1,4 +1,4 @@
-// components/details/TripDetails.jsx
+
 import React from "react";
 
 const TripDetails = ({ tripData }) => {
