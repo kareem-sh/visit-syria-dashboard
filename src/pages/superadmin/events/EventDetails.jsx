@@ -3,8 +3,11 @@ import Table from "@/components/common/CommonTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
 import Banner from "@/components/common/Banner.jsx";
 import EventIcon from "@/assets/images/event image.svg";
-import { eventsData } from "@/data/event.js";
-import EventForm from "@/components/common/EventForm";
+import EventForm from "@/components/dialog/EventForm.jsx";
+import { getEvents } from "@/services/events/eventsApi.js"; // your API function
+import Skeleton from '@mui/material/Skeleton';
+import Box from '@mui/material/Box';
+import { useQuery } from "@tanstack/react-query";
 
 const columns = [
     { header: "الرقم التعريفي", accessor: "id" },
@@ -27,50 +30,85 @@ const filterOptions = [
     { label: "حسب الحالة (لم تبدأ بعد)", value: "لم تبدأ بعد" },
 ];
 
-const EventDetails = ({ data = eventsData }) => {
-    const [filteredData, setFilteredData] = useState(data);
+const EventDetails = () => {
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+    // ✅ Fetch events with React Query
+    const { data: events = [], isLoading, isError } = useQuery({
+        queryKey: ["events"],
+        queryFn: getEvents,
+    });
+
+    // ✅ Filtering logic
     const handleFilterChange = useCallback(
         (filterValue) => {
             setCurrentFilter(filterValue);
-
-            let newData = [...data]; // always start from original data
-
-            switch (filterValue) {
-                case "latest":
-                    newData.sort((a, b) => {
-                        const dateA = new Date(a.date.split("/").reverse().join("-"));
-                        const dateB = new Date(b.date.split("/").reverse().join("-"));
-                        return dateB - dateA; // newest first
-                    });
-                    break;
-
-                case "oldest":
-                    newData.sort((a, b) => {
-                        const dateA = new Date(a.date.split("/").reverse().join("-"));
-                        const dateB = new Date(b.date.split("/").reverse().join("-"));
-                        return dateA - dateB; // oldest first
-                    });
-                    break;
-
-
-                case "منتهية":
-                case "تم الإلغاء":
-                case "جارية حالياً":
-                case "لم تبدأ بعد":
-                    newData = newData.filter((item) => item.status === filterValue);
-                    break;
-
-                default:
-                    newData = [...data];
-            }
-
-            setFilteredData(newData);
         },
-        [data]
+        []
     );
+
+    // ✅ Apply filter to data
+    const filteredData = React.useMemo(() => {
+        let newData = [...events];
+
+        switch (currentFilter) {
+            case "latest":
+                newData.sort(
+                    (a, b) =>
+                        new Date(b.date.split("/").reverse().join("-")) -
+                        new Date(a.date.split("/").reverse().join("-"))
+                );
+                break;
+            case "oldest":
+                newData.sort(
+                    (a, b) =>
+                        new Date(a.date.split("/").reverse().join("-")) -
+                        new Date(b.date.split("/").reverse().join("-"))
+                );
+                break;
+            case "منتهية":
+            case "تم الإلغاء":
+            case "جارية حالياً":
+            case "لم تبدأ بعد":
+                newData = newData.filter((item) => item.status === currentFilter);
+                break;
+            default:
+                newData = [...events];
+        }
+
+        return newData;
+    }, [events, currentFilter]);
+
+    // ✅ Loading Skeleton
+    if (isLoading)
+        return (
+            <Box
+                sx={{
+                    width: "100%",
+                    minHeight: "80vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    p: 4,
+                }}
+            >
+                <Skeleton variant="rectangular" width="100%" height={80} sx={{ mb: 2 }} />
+                <Skeleton variant="rectangular" width="200px" height={40} sx={{ mb: 2 }} />
+                {[...Array(6)].map((_, i) => (
+                    <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        width="100%"
+                        height={50}
+                        sx={{ mb: 1, borderRadius: 1 }}
+                    />
+                ))}
+            </Box>
+        );
+
+    // ✅ Error message
+    if (isError) return <p className="p-4 text-red-600 font-semibold">فشل تحميل البيانات. يرجى المحاولة لاحقاً.</p>;
 
     return (
         <div className="w-full p-0 m-0">

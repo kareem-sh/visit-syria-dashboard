@@ -6,7 +6,7 @@ import Trips from "@/pages/superadmin/dashboard-status/Trips";
 import Profits from "@/pages/superadmin/dashboard-status/profits";
 import TripDetailsPage from "./pages/superadmin/trips/DetailsPage.jsx";
 import EventDetails from "@/pages/superadmin/events/EventDetails.jsx";
-import EventForm from "@/components/common/EventForm.jsx";
+import DialogTest from "./pages/superadmin/events/DialogTest.jsx";
 
 
 const App = () => {
@@ -19,7 +19,7 @@ const App = () => {
           <Route path="/profits" element={<Profits />} />
           <Route path="/trip/:id" element={<TripDetailsPage />}></Route>
           <Route path="/events" element={<EventDetails />}></Route>
-          <Route path="/dialog-test" element={<EventForm />} />
+          <Route path="/test" element={<DialogTest />} />
         </Routes>
       </MainLayout>
     </SidebarProvider>
