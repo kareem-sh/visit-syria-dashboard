@@ -1,5 +1,3 @@
-
-// ImageSection.jsx
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -7,9 +5,14 @@ const ImageModal = ({ src, onClose }) => {
     return createPortal(
         <div
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 flex justify-center items-center z-50"
+            className="fixed inset-0 bg-black/70 flex justify-center items-center z-[9999]"
         >
-            <img src={src} alt="Zoomed" className="w-full h-full rounded-lg shadow-lg" />
+            <img
+                src={src}
+                alt="Zoomed"
+                className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg object-contain"
+                onClick={(e) => e.stopPropagation()}
+            />
         </div>,
         document.body
     );

@@ -1,7 +1,7 @@
 import { Star } from "lucide-react";
-import Temp from "@/assets/icons/trip/temp-icon.svg";
-import Tickets from "@/assets/icons/trip/tickets.svg";
-import TicketPrice from "@/assets/icons/trip/ticket-price.svg";
+import Temp from "@/assets/icons/event/temp-icon.svg";
+import Tickets from "@/assets/icons/event/tickets.svg";
+import TicketPrice from "@/assets/icons/event/ticket-price.svg";
 import companyImage from "@/assets/images/Company Profile.svg";
 import doneIcon from "@/assets/icons/table/done small.svg";
 import canceledIcon from "@/assets/icons/table/canceled small.svg";

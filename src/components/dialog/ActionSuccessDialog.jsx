@@ -1,15 +1,15 @@
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle } from "lucide-react"; // make sure lucide-react is installed
+import { CheckCircle } from "lucide-react";
 
-export default function SuccessDialog({
-                                          open,
-                                          onClose,
-                                          message = "تمت الإضافة بنجاح",
-                                      }) {
+export default function ActionSuccessDialog({
+                                                open,
+                                                onClose,
+                                                message = "تمت العملية بنجاح ✅",
+                                            }) {
     useEffect(() => {
         if (open) {
-            const timer = setTimeout(onClose, 1500); // auto-close after 2.5s
+            const timer = setTimeout(onClose, 2500); // auto-close after 2.5s
             return () => clearTimeout(timer);
         }
     }, [open, onClose]);
@@ -27,7 +27,7 @@ export default function SuccessDialog({
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
-                        className="bg-(--bg-card) px-8 py-6 rounded-2xl shadow-xl flex flex-col items-center"
+                        className="bg-white px-8 py-6 rounded-2xl shadow-xl flex flex-col items-center"
                     >
                         <motion.div
                             initial={{ scale: 0 }}

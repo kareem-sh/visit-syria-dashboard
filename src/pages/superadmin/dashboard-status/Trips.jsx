@@ -172,7 +172,7 @@ const Trips = () => {
         showFilter={false}
         showHeader={false}
         showSeeAll={false}
-        basePath={'trip'}
+        basePath={'trips'}
       />
     </div>
   );

@@ -30,7 +30,7 @@ const filterOptions = [
     { label: "حسب الحالة (لم تبدأ بعد)", value: "لم تبدأ بعد" },
 ];
 
-const EventDetails = () => {
+const Events = () => {
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -146,10 +146,10 @@ const EventDetails = () => {
                 showFilter={false}
                 showHeader={false}
                 showSeeAll={false}
-                basePath={"event"}
+                basePath={"events"}
             />
         </div>
     );
 };
 
-export default EventDetails;
+export default Events;

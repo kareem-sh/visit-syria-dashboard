@@ -57,7 +57,7 @@ const Table = ({
   };
 
   const handleSeeAllClick = () => navigate("/trips");
-  const handleRowClick = (tripId) => navigate(`/trip/${tripId}`);
+  const handleRowClick = (tripId) => navigate(`/trips/${tripId}`);
   const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
 
   const handleFilterSelect = (option) => {

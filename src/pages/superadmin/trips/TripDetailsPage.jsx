@@ -6,7 +6,7 @@ import TripInfoCard from "@/components/common/TripInfoCard.jsx";
 import DayDetails from "@/components/common/DayDetails";
 import { getDataByType } from "@/data/index.js";
 
-const DetailsPage = ({ type = "trip" }) => {
+const TripDetailsPage = ({ type = "event" }) => {
     const { id } = useParams();
     const data = getDataByType(type) || [];
     const item = data.find((el) => String(el.id) === String(id));
@@ -96,4 +96,4 @@ const DetailsPage = ({ type = "trip" }) => {
     );
 };
 
-export default DetailsPage;
+export default TripDetailsPage;
