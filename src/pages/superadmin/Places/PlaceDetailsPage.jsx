@@ -39,12 +39,14 @@ const PlaceDetailsPage = () => {
         }
     });
 
-    // Update mutation
+    // Update mutation: keep it as-is (calls updatePlace internally)
     const updateMutation = useMutation({
         mutationFn: (formData) => updatePlace(id, formData),
         onSuccess: () => {
             toast.success("تم تحديث المكان بنجاح");
+            // refresh details after successful update
             refetch();
+            // optionally invalidate other queries if needed
         },
         onError: (error) => {
             console.error("Error updating place:", error);
@@ -52,13 +54,23 @@ const PlaceDetailsPage = () => {
         }
     });
 
+    // wrapper passed to PlaceForm as submitFn
+    // it strips `type` (per your requirement) and calls updateMutation.mutateAsync once
+    const submitUpdate = async (payload) => {
+        // strip `type` for updates
+        const { type, ...rest } = payload;
+        // rest.images should be array of File objects (PlaceForm prepares that)
+        // call mutateAsync so we can await it and allow PlaceForm to catch errors
+        return updateMutation.mutateAsync(rest);
+    };
+
     const handleDeleteConfirm = () => {
         deleteMutation.mutate();
         setShowDeleteDialog(false);
     };
 
-    const handleEditSuccess = (formData) => {
-        updateMutation.mutate(formData);
+    // onSuccess from PlaceForm only needs to close the form (update already done by submitUpdate)
+    const handleFormSuccess = () => {
         setShowEditForm(false);
     };
 
@@ -147,8 +159,8 @@ const PlaceDetailsPage = () => {
                 {showEditForm && (
                     <PlaceForm
                         onClose={() => setShowEditForm(false)}
-                        onSuccess={handleEditSuccess}
-                        submitFn={updatePlace}
+                        onSuccess={handleFormSuccess}      // just close dialog after success
+                        submitFn={submitUpdate}           // <<< important: wrapper that strips `type` and calls update
                         initialData={item}
                         isEdit={true}
                         isLoading={updateMutation.isLoading}

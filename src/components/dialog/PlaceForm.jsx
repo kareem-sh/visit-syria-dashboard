@@ -115,6 +115,7 @@ export default function PlaceForm({
 
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
+  const convertedExistingRef = useRef(false); // prevent repeat conversion
 
   useEffect(() => {
     // revoke blob URLs on unmount / when images change
@@ -148,6 +149,95 @@ export default function PlaceForm({
       });
     }
   }, [formData.type]);
+
+  /**
+   * NEW: In edit mode, convert existing image URLs to File objects (when possible)
+   * so submitFn always receives File objects for images.
+   *
+   * Behavior:
+   * - Runs once per component mount (convertedExistingRef stops repeats).
+   * - For each initial image that has a url and no file, attempt to fetch the URL,
+   *   create a File, and set it into formData.images[index].file.
+   * - If fetch fails (CORS / network), we keep the original url and leave file=null.
+   */
+  useEffect(() => {
+    if (!isEdit || !initialData || convertedExistingRef.current) return;
+    const initialImgs = initialData.images || [];
+    if (!initialImgs.length) {
+      convertedExistingRef.current = true;
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const conversions = await Promise.all(
+            initialImgs.map(async (img, idx) => {
+              const url = typeof img === "string" ? toAbsoluteUrl(img) : toAbsoluteUrl(img.url || img.path || img.thumbnail || "");
+              if (!url) return { index: idx, file: null };
+
+              try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("fetch failed");
+                const blob = await res.blob();
+
+                // derive filename from url if possible
+                let filename = `existing-${idx}`;
+                try {
+                  const parsed = new URL(url);
+                  const parts = parsed.pathname.split("/");
+                  if (parts.length) {
+                    const last = parts.pop();
+                    if (last) filename = last.split("?")[0] || filename;
+                  }
+                } catch (e) {
+                  // ignore
+                }
+
+                const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+                return { index: idx, file, url };
+              } catch (err) {
+                console.error("PlaceForm: failed to fetch image for conversion", url, err);
+                return { index: idx, file: null, url };
+              }
+            })
+        );
+
+        if (cancelled) return;
+
+        setFormData((prev) => {
+          // Use prev.images as base in case something else changed it
+          const images = (prev.images || []).slice();
+          // Ensure images length matches at least initialImgs length
+          for (let i = 0; i < conversions.length; i++) {
+            const c = conversions[i];
+            if (!images[i]) {
+              // create placeholder if missing
+              images[i] = { id: null, url: c.url || "", file: c.file ?? null };
+            } else {
+              if (c.file) {
+                images[i] = { ...images[i], file: c.file };
+              } else {
+                // leave existing url, file remains as-is (likely null)
+                images[i] = { ...images[i], url: images[i].url || c.url || images[i].url, file: images[i].file ?? null };
+              }
+            }
+          }
+          return { ...prev, images };
+        });
+
+      } finally {
+        convertedExistingRef.current = true;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // Run only once for initialData + isEdit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, initialData]);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files || []);
@@ -230,15 +320,16 @@ export default function PlaceForm({
   };
 
   // ---------- handleSubmit: send plain object where images = array of File (new files) ----------
+  // ---------- handleSubmit: send all images (existing + new) as File objects ----------
+// ---------- handleSubmit: send all images (existing + new) as File ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     try {
-      // Build payload object (plain JS object). Let submitFn (placesApi) convert to FormData.
       const payload = {};
 
-      // Append all non-image fields excluding lat/lon/classification (we'll add them explicitly)
+      // Append non-image fields
       Object.entries(formData).forEach(([key, value]) => {
         if (key === "images") return;
         if (key === "lat" || key === "lon") return;
@@ -246,7 +337,6 @@ export default function PlaceForm({
 
         let toAppend = value === null || value === undefined ? "" : value;
 
-        // Phone: strip country code and leading plus (same logic as before)
         if (key === "phone") {
           let phoneStr = String(toAppend || "");
           const cc = String(formData.country_code || "");
@@ -267,36 +357,34 @@ export default function PlaceForm({
         payload[key] = String(toAppend);
       });
 
-      // classification:
-      if (formData.type === "tourist") {
-        payload.classification = formData.classification ?? "";
-      } else {
-        payload.classification = "";
-      }
+      // classification
+      payload.classification =
+          formData.type === "tourist" ? formData.classification ?? "" : "";
 
-      // Append latitude & longitude (backend expects these names)
+      // lat/lon
       payload.latitude = String(formData.lat ?? "");
       payload.longitude = String(formData.lon ?? "");
 
-      // IMPORTANT: images should be an array of File objects (only newly added files).
-      // This mirrors EventForm: it sends only File objects for upload and lets the API layer
-      // append them to multipart/form-data. Existing server images (with id & url) are left as-is.
-      const newFiles = (formData.images || [])
-          .filter((i) => i.file instanceof File)
+      // Collect ALL images as File objects (existing + new)
+      const allFiles = (formData.images || [])
+          .filter((i) => i.file instanceof File) // only take those with a File
           .map((i) => i.file);
 
-      payload.images = newFiles;
+      payload.images = allFiles;
 
-      // Debug print (keeps helpful console info)
+      // Debug log
       console.group("PlaceForm: payload to send");
       Object.entries(payload).forEach(([k, v]) => {
         if (Array.isArray(v)) {
           console.log(k, `Array(${v.length})`);
           v.forEach((item, idx) => {
             if (item instanceof File) {
-              console.log(`  [${idx}]`, `${item.name} (File, ${item.type || "unknown"}, ${item.size} bytes)`);
+              console.log(
+                  `[${idx}]`,
+                  `${item.name} (File, ${item.type || "unknown"}, ${item.size} bytes)`
+              );
             } else {
-              console.log(`  [${idx}]`, item);
+              console.log(`[${idx}]`, item);
             }
           });
         } else {
@@ -305,9 +393,8 @@ export default function PlaceForm({
       });
       console.groupEnd();
 
-      // call submitFn which expects a plain object (placesApi will convert to FormData)
       await submitFn(payload);
-      toast.success("تمت إضافة المكان بنجاح");
+      toast.success(isEdit ? "تم تعديل المكان بنجاح" : "تمت إضافة المكان بنجاح");
       if (typeof onSuccess === "function") onSuccess();
     } catch (error) {
       console.error("Submission error:", error);
@@ -316,7 +403,10 @@ export default function PlaceForm({
         const first = errMsg.errors ? Object.values(errMsg.errors)[0] : null;
         if (first) {
           toast.error(Array.isArray(first) ? first[0] : String(first));
-          setErrors((p) => ({ ...p, api: Array.isArray(first) ? first[0] : String(first) }));
+          setErrors((p) => ({
+            ...p,
+            api: Array.isArray(first) ? first[0] : String(first),
+          }));
         } else if (errMsg.message) {
           toast.error(errMsg.message);
           setErrors((p) => ({ ...p, api: errMsg.message }));
