@@ -499,7 +499,7 @@ export default function EventForm({ onClose }) {
                             <button
                                 type="submit"
                                 disabled={mutation.isLoading}
-                                className="w-full bg-green text-white py-3 rounded-xl hover:bg-green-700 transition disabled:opacity-50"
+                                className="w-full bg-green text-white py-3 rounded-xl hover:shadow-md transition disabled:opacity-50"
                             >
                                 {mutation.isLoading ? "جاري الإضافة..." : "+ إضافة"}
                             </button>

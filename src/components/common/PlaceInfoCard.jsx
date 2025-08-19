@@ -16,7 +16,7 @@ export default function PlaceInfoCard({ data, onEdit, onDelete }) {
         number_of_branches,
         phone,
         country_code,
-        governorate,
+        city,
         place,
         longitude,
         latitude,
@@ -38,12 +38,12 @@ export default function PlaceInfoCard({ data, onEdit, onDelete }) {
                 </div>
 
                 {/* Middle: rating */}
-                {rating && (
+                {rating >= 0 && (
                     <div className="flex items-center gap-2 text-yellow-600 font-semibold">
                         <span className="text-h1-bold-24 text-(--text-title)"> متوسط التقييمات:</span>
                         <span className="flex items-center gap-1 text-xl">
                             {rating}
-                            <Star size={18} fill="currentColor" />
+                           <span className="pb-1"><Star size={18} fill="currentColor" /></span>
                         </span>
                     </div>
                 )}
@@ -68,7 +68,7 @@ export default function PlaceInfoCard({ data, onEdit, onDelete }) {
             {/* === Content Grid === */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
                 <InfoItem label="الرقم التعريفي" value={id} />
-                <InfoItem label="المحافظة" value={governorate ?? "-"} />
+                <InfoItem label="المحافظة" value={city ?? "-"} />
 
                 {/* hide branches and phone for tourist type */}
                 {!isTourist && number_of_branches > 0 && (
@@ -77,7 +77,7 @@ export default function PlaceInfoCard({ data, onEdit, onDelete }) {
                 {!isTourist && phone && (
                     <InfoItem
                         label="رقم الهاتف"
-                        value={`${country_code || ""} ${phone}`}
+                        value={`${phone} ${country_code.slice(1) || ""}+ `}
                     />
                 )}
 

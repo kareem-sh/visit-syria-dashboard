@@ -39,6 +39,11 @@ export default function Chart({
         beginAtZero: true,
         ticks: { stepSize: 5 },
         grid: { color: "#eee" },
+        font: {
+          family: "BC Arabic",
+          size: 14,
+          weight: "700",
+        },
       },
       x: {
         grid: { display: false },
@@ -57,6 +62,7 @@ export default function Chart({
   };
 
   return (
+
     <div className="bg-white p-6 w-full rounded-lg" style={{ height }}>
       <Bar data={data} options={options} />
     </div>

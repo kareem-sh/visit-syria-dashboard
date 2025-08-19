@@ -4,7 +4,7 @@ import SortFilterButton from "@/components/common/SortFilterButton";
 import Banner from "@/components/common/Banner.jsx";
 import EventIcon from "@/assets/images/event image.svg";
 import EventForm from "@/components/dialog/EventForm.jsx";
-import { getEvents } from "@/services/events/eventsApi.js"; // your API function
+import { getEvents } from "@/services/events/eventsApi.js";
 import Skeleton from '@mui/material/Skeleton';
 import Box from '@mui/material/Box';
 import { useQuery } from "@tanstack/react-query";

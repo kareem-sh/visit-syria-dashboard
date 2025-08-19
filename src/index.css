@@ -3,6 +3,8 @@
 /* Import Tailwind's base styles */
 @import "tailwindcss";
 @import 'leaflet/dist/leaflet.css';
+@import "react-phone-input-2/lib/style.css";
+@import 'react-toastify/dist/ReactToastify.css';
 
 
 @font-face {
@@ -312,6 +314,7 @@
   line-height: normal;
   font-weight: 700;
 }
+
 @layer components {
   .card {
     @apply bg-(--bg-card) rounded-xl p-4 shadow-sm;

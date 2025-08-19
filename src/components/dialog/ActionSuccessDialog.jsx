@@ -1,11 +1,13 @@
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 export default function ActionSuccessDialog({
                                                 open,
                                                 onClose,
-                                                message = "تمت العملية بنجاح ✅",
+                                                message,
+                                                // status: "success" | "error". If omitted, treat as success.
+                                                status = "success",
                                             }) {
     useEffect(() => {
         if (open) {
@@ -13,6 +15,22 @@ export default function ActionSuccessDialog({
             return () => clearTimeout(timer);
         }
     }, [open, onClose]);
+
+    // Determine effective status and default message
+    const effectiveStatus = status === "error" ? "error" : "success";
+    const defaultMessage =
+        effectiveStatus === "error" ? "حدث خطأ" : "تمت العملية بنجاح ✅";
+    const displayMessage = message ?? defaultMessage;
+
+    const isError = effectiveStatus === "error";
+
+    const icon = isError ? (
+        <XCircle size={64} />
+    ) : (
+        <CheckCircle size={64} />
+    );
+
+    const iconColorClass = isError ? "text-red-500" : "text-green-500";
 
     return (
         <AnimatePresence>
@@ -22,6 +40,9 @@ export default function ActionSuccessDialog({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 flex items-center justify-center z-50 bg-black/30"
+                    role="dialog"
+                    aria-live="polite"
+                    aria-label={isError ? "خطأ" : "نجاح"}
                 >
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
@@ -37,12 +58,12 @@ export default function ActionSuccessDialog({
                                 stiffness: 500,
                                 damping: 15,
                             }}
-                            className="text-green-500 mb-4"
+                            className={`${iconColorClass} mb-4`}
                         >
-                            <CheckCircle size={64} />
+                            {icon}
                         </motion.div>
                         <div className="text-gray-800 text-lg font-medium text-center">
-                            {message}
+                            {displayMessage}
                         </div>
                     </motion.div>
                 </motion.div>

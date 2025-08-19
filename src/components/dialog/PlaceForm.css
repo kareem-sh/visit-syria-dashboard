@@ -1,0 +1,241 @@
+/* ===================================================================
+   PlaceForm.css — Phone input + dropdowns consolidated overrides
+   =================================================================== */
+
+/* ---------- Phone input unified container & behavior ---------- */
+
+/* keep the phone input LTR inside RTL modal so flag+number are ordered correctly */
+.placeform-phone-wrapper {
+    direction: ltr;
+}
+
+/* Root container: force LTR layout inside the root (important) */
+.react-tel-input {
+    direction: ltr; /* ensure input flows left-to-right */
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 50px;
+    border: 1px solid #D1D5DB;      /* unified outer border */
+    border-radius: 12px;            /* unified radius */
+    background: #ffffff;            /* white background */
+    font-family: inherit;
+    position: relative;
+}
+
+/* Focus-within style */
+.react-tel-input:focus-within {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+    border-color: #059669;
+}
+
+/* Error state */
+.react-tel-input.phone-error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+/* Flag area */
+.react-tel-input .flag-dropdown {
+    border: none;
+    background: transparent;
+    padding: 0 10px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    min-width: 54px; /* reserve space for flag */
+    box-sizing: border-box;
+}
+
+/* Selected flag wrapper — keep elements inline */
+.react-tel-input .selected-flag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 0;
+    white-space: nowrap;
+}
+
+/* ---------- FORCE-HIDE original dial code so it never shows under flag ----------
+   Collapses the library's dial code span completely so it doesn't reserve space.
+   This is the primary "hide" behavior. */
+.react-tel-input .selected-flag .iti__selected-dial-code,
+.react-tel-input .flag-dropdown .iti__selected-dial-code,
+.react-tel-input .selected-flag .iti__selected-dial-code * {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+    position: static !important;
+    transform: none !important;
+}
+.react-tel-input .selected-flag .iti__selected-dial-code::before,
+.react-tel-input .selected-flag .iti__selected-dial-code::after {
+    content: "" !important;
+    display: none !important;
+}
+
+/* Fallback safety: reset inherited properties for the library element (guarded) */
+.react-tel-input .selected-flag .iti__selected-dial-code,
+.react-tel-input .selected-flag .iti__selected-dial-code * {
+    all: unset;
+    all: revert; /* try to keep sane defaults; this is intentionally guarded */
+}
+
+/* ---------- Custom stable dial displayed next to the flag (if you choose to show it) ----------
+   Use .show-dialcode on the root container to enable an inline dial next to the flag:
+   containerClass={`react-tel-input show-dialcode`}
+*/
+.react-tel-input .selected-flag .custom-dial {
+    display: inline-block;
+    margin-left: 6px;      /* gap between flag and code */
+    margin-right: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: #111;
+    user-select: none;
+    pointer-events: none;  /* non-interactive */
+    white-space: nowrap;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* If showing code, ensure wrapper gap is enough */
+.react-tel-input.show-dialcode .selected-flag {
+    gap: 6px !important;
+}
+
+/* ---------- Input: ensure it never sits under the flag and show placeholder ---------- */
+.react-tel-input .form-control {
+    border: none;
+    outline: none;
+    height: 44px;
+    padding: 0 12px;
+    padding-left: 12px;      /* input padding so text starts after left area */
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 0;
+    background: transparent;
+    font-size: 14px;
+    flex: 1;                /* let input take remaining space after flag */
+    direction: ltr;         /* critical: keep numbers/placeholder LTR */
+    text-align: left;       /* ensure placeholder aligns left */
+    color: #111;            /* visible text color */
+}
+
+/* placeholder color (explicit so it's visible on all platforms) */
+.react-tel-input .form-control::placeholder {
+    color: #9CA3AF; /* tailwind gray-400 equivalent */
+    opacity: 1;     /* ensure not dimmed by browser */
+}
+
+/* Consistent height for flag and input */
+.react-tel-input .form-control,
+.react-tel-input .flag-dropdown {
+    min-height: 44px;
+}
+
+/* Country list dropdown */
+.react-tel-input .country-list {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    z-index: 9999;
+}
+
+/* Prevent unwanted bg on flag area */
+.react-tel-input .flag-dropdown button,
+.react-tel-input .flag-dropdown svg {
+    background: transparent;
+}
+
+/* Autofill fix */
+.react-tel-input .form-control:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    box-shadow: 0 0 0px 1000px #ffffff inset;
+}
+
+/* ---------- Force inline flag + dial layout and reserved spacing ----------
+   This block makes sure the flag & dial never stack vertically and reserves
+   enough horizontal space to prevent overlap with the input text/placeholder.
+*/
+/* keep flag in place; reserve more horizontal space so number starts later */
+.react-tel-input .selected-flag {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding-left: 8px !important; /* don't push the flag itself */
+    box-sizing: border-box !important;
+}
+
+/* increase reserved width so input starts later (adjust px as needed) */
+.react-tel-input .flag-dropdown {
+    min-width: 110px !important;   /* <- increase this to move number further right */
+    padding-left: 12px !important;
+    padding-right: 8px !important;
+    justify-content: flex-start !important;
+}
+
+
+/* If you enable .show-dialcode, increase reserved width to avoid collision */
+.react-tel-input.show-dialcode .flag-dropdown {
+    min-width: 96px !important;
+    padding-left: 14px !important;
+}
+
+/* small responsive safety: prevent library from switching to column at small widths */
+.react-tel-input .selected-flag,
+.react-tel-input .flag-dropdown {
+    white-space: nowrap !important;
+}
+
+/* Ensure input content starts after the reserved area (avoid overlap) */
+/* push the input text (the phone number) to the right */
+.react-tel-input .form-control {
+    padding-left: 60px !important; /* increase this to move the number right */
+}
+
+
+/* ---------- Dropdown Styling (select elements) ---------- */
+
+/* Base select style */
+.custom-select {
+    border: 1px solid #d1d5db !important; /* grey border */
+    border-radius: 12px;
+    background-color: #fff;
+    padding: 0.6rem 0.8rem;
+    font-size: 14px;
+    font-family: inherit;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Options */
+.custom-select option {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+/* Hover/Focus state for options - green bg + white text */
+.custom-select option:hover,
+.custom-select option:focus {
+    background-color: #059669 !important; /* green bg */
+    color: #fff !important;               /* white text */
+}
+
+/* If you want the select's displayed text (selected option) to use your bold class,
+   apply text-body-bold-14 on the select element in JSX (we kept options' font as inherit). */
+
+/* ---------- Debug helpers (commented): uncomment if you need to visually inspect reserved areas ----------
+.react-tel-input .flag-dropdown { outline: 1px dashed rgba(0,0,0,0.06); }
+.react-tel-input .selected-flag { outline: 1px dashed rgba(0,0,0,0.04); }
+*/
