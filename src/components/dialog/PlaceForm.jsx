@@ -42,8 +42,8 @@ const cities = [
   "حمص",
   "حماة",
   "اللاذقية",
-  "طرطوس",
-  "إدلب",
+  "طرطус",
+  "ادلب",
   "الرقة",
   "دير الزور",
   "الحسكة",
@@ -302,16 +302,13 @@ export default function PlaceForm({
   };
 
   const handlePhoneChange = (value, data) => {
-    const withPlus = value ? `+${value.replace(/^\+/, "")}` : "";
-    const dial = data?.dialCode
-        ? `+${data.dialCode}`
-        : data?.country_code
-            ? `+${data.country_code}`
-            : "";
+    const dialCode = data.dialCode;
+    const phoneNumber = value.replace(dialCode, "");
+
     setFormData((prev) => ({
       ...prev,
-      phone: withPlus,
-      country_code: dial || prev.country_code,
+      phone: phoneNumber,
+      country_code: `+${dialCode}`,
     }));
   };
 
@@ -319,9 +316,6 @@ export default function PlaceForm({
     setFormData((prev) => ({ ...prev, place: display_name, lat, lon }));
   };
 
-  // ---------- handleSubmit: send plain object where images = array of File (new files) ----------
-  // ---------- handleSubmit: send all images (existing + new) as File objects ----------
-// ---------- handleSubmit: send all images (existing + new) as File ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -337,21 +331,10 @@ export default function PlaceForm({
 
         let toAppend = value === null || value === undefined ? "" : value;
 
+        // For phone, combine country code and phone number
         if (key === "phone") {
-          let phoneStr = String(toAppend || "");
-          const cc = String(formData.country_code || "");
-          const ccNoPlus = cc.replace(/^\+/, "");
-          if (phoneStr.startsWith("+")) {
-            if (phoneStr.startsWith("+" + ccNoPlus)) {
-              phoneStr = phoneStr.slice(1 + ccNoPlus.length);
-            } else {
-              phoneStr = phoneStr.slice(1);
-            }
-          } else if (phoneStr.startsWith(ccNoPlus)) {
-            phoneStr = phoneStr.slice(ccNoPlus.length);
-          }
-          phoneStr = phoneStr.replace(/^\D+/, "");
-          toAppend = phoneStr;
+          payload[key] = `${formData.country_code}${value}`;
+          return;
         }
 
         payload[key] = String(toAppend);
@@ -372,29 +355,8 @@ export default function PlaceForm({
 
       payload.images = allFiles;
 
-      // Debug log
-      console.group("PlaceForm: payload to send");
-      Object.entries(payload).forEach(([k, v]) => {
-        if (Array.isArray(v)) {
-          console.log(k, `Array(${v.length})`);
-          v.forEach((item, idx) => {
-            if (item instanceof File) {
-              console.log(
-                  `[${idx}]`,
-                  `${item.name} (File, ${item.type || "unknown"}, ${item.size} bytes)`
-              );
-            } else {
-              console.log(`[${idx}]`, item);
-            }
-          });
-        } else {
-          console.log(k, v);
-        }
-      });
-      console.groupEnd();
-
       await submitFn(payload);
-      toast.success(isEdit ? "تم تعديل المكان بنجاح" : "تمت إضافة المكان بنجاح");
+      // Removed the toast.success call here to prevent double toast
       if (typeof onSuccess === "function") onSuccess();
     } catch (error) {
       console.error("Submission error:", error);
@@ -507,7 +469,7 @@ export default function PlaceForm({
 
   return (
       <div
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-9999"
           onClick={onClose}
       >
         <div
@@ -658,8 +620,7 @@ export default function PlaceForm({
                   <div className="placeform-phone-wrapper">
                     <PhoneInput
                         country={"sy"}
-                        preferredCountries={["sy"]}
-                        value={formData.phone ? formData.phone.replace(/^\+/, "") : ""}
+                        value={`${formData.country_code}${formData.phone}`}
                         onChange={handlePhoneChange}
                         enableSearch
                         containerClass={`react-tel-input ${

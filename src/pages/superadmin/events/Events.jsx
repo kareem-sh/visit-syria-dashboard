@@ -34,13 +34,11 @@ const Events = () => {
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    // ✅ Fetch events with React Query
     const { data: events = [], isLoading, isError } = useQuery({
         queryKey: ["events"],
         queryFn: getEvents,
     });
 
-    // ✅ Filtering logic
     const handleFilterChange = useCallback(
         (filterValue) => {
             setCurrentFilter(filterValue);
@@ -48,7 +46,6 @@ const Events = () => {
         []
     );
 
-    // ✅ Apply filter to data
     const filteredData = React.useMemo(() => {
         let newData = [...events];
 
@@ -80,7 +77,6 @@ const Events = () => {
         return newData;
     }, [events, currentFilter]);
 
-    // ✅ Loading Skeleton
     if (isLoading)
         return (
             <Box
@@ -107,7 +103,6 @@ const Events = () => {
             </Box>
         );
 
-    // ✅ Error message
     if (isError) return <p className="p-4 text-red-600 font-semibold">فشل تحميل البيانات. يرجى المحاولة لاحقاً.</p>;
 
     return (

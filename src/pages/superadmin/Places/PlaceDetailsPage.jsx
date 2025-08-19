@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "react-toastify";
 
 const PlaceDetailsPage = () => {
-    const { id } = useParams();
+    const { id,cityname,section } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
     const imageRef = useRef(null);
@@ -31,7 +31,7 @@ const PlaceDetailsPage = () => {
         mutationFn: () => deletePlace(id),
         onSuccess: () => {
             toast.success("تم حذف المكان بنجاح");
-            navigate('/places');
+            navigate(`/places/cities/${cityname}/${section}`);
         },
         onError: (error) => {
             console.error("Error deleting place:", error);
@@ -159,8 +159,8 @@ const PlaceDetailsPage = () => {
                 {showEditForm && (
                     <PlaceForm
                         onClose={() => setShowEditForm(false)}
-                        onSuccess={handleFormSuccess}      // just close dialog after success
-                        submitFn={submitUpdate}           // <<< important: wrapper that strips `type` and calls update
+                        onSuccess={handleFormSuccess}
+                        submitFn={submitUpdate}
                         initialData={item}
                         isEdit={true}
                         isLoading={updateMutation.isLoading}

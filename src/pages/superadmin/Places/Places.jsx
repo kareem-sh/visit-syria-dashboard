@@ -122,7 +122,7 @@ export default function Places() {
         { name: "السويداء", image: PlaceCardSweida },
         { name: "طرطوس", image: PlaceCardTartus },
         { name: "دير الزور", image: PlaceCardDeirEzZor },
-        { name: "إدلب", image: PlaceCardIdlib },
+        { name: "ادلب", image: PlaceCardIdlib },
         { name: "الحسكة", image: PlaceCardHasaka },
         { name: "القنيطرة", image: PlaceCardQuneitra },
         { name: "الرقة", image: PlaceCardRaqqa },
@@ -182,6 +182,7 @@ export default function Places() {
                 <PlaceForm
                     onClose={() => setIsPlaceDialogOpen(false)}
                     onSuccess={(payload) => handlePlaceSuccess(payload)}
+                    isEdit={false}
                     submitFn={createPlace}
                 />
             )}

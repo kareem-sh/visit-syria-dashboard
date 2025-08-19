@@ -64,7 +64,7 @@ export const cities = {
         description: "تقع على ضفاف الفرات، وتشتهر بطابعها النهري ومواقع أثرية وتجارية.",
         stats: { restaurants: 9, hotels: 6, touristPlaces: 11 },
     },
-    "إدلب": {
+    "ادلب": {
         image: CityImg11,
         description: "مناظر ريفية وأرياف غنية بالزيتون ومواقع أثرية تحكي جزءاً من تاريخ المنطقة.",
         stats: { restaurants: 12, hotels: 7, touristPlaces: 14 },

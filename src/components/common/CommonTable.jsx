@@ -4,6 +4,8 @@ import doneIcon from "@/assets/icons/table/done small.svg";
 import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
+import Banned from "@/assets/icons/table/Banned.svg";
+import Warning from  "@/assets/icons/table/Warning.svg"
 
 const CommonTable = ({
                          columns,
@@ -32,17 +34,31 @@ const CommonTable = ({
         let icon, bg, text;
         switch (status) {
             case "منتهية":
+            case "نشط":
+            case "مقبول":
                 icon = doneIcon;
                 bg = "bg-green-100/60";
                 text = "text-grey";
                 break;
             case "تم الإلغاء":
+            case "مرفوض":
                 icon = canceledIcon;
                 bg = "bg-red-50";
                 text = "text-red-600";
                 break;
+            case "حظر دائم":
+                icon = Banned;
+                bg = "bg-red-50";
+                text = "text-red-600";
+                break;
             case "جارية حالياً":
+            case "في الانتظار":
                 icon = inprogressIcon;
+                bg = "bg-gold-500/10";
+                text = "text-gold";
+                break;
+            case "حظر مؤقت":
+                icon = Warning;
                 bg = "bg-gold-500/10";
                 text = "text-gold";
                 break;
