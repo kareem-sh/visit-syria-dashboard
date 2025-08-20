@@ -85,7 +85,7 @@ export default function Companies() {
         { id: 4, company: "شركة البناء", trips: 22, rating: 4.3, status: "مقبول" },
         { id: 5, company: "شركة التقنية", trips: 18, rating: 4.6, status: "مرفوض" },
         { id: 6, company: "شركة الغذاء", trips: 15, rating: 4.0, status: "حظر مؤقت" },
-        { id: 7, company: "شركة الاتصالات", trips: 12, rating: 4.2, status: "حظر دائم" }
+        { id: 7, company: "شركة الاتصالات", trips: 12, rating: 4.2, status: "قيد الحذف" }
     ];
 
     // Filter and sort the table data based on the current filter
@@ -197,7 +197,6 @@ export default function Companies() {
                                 labels={chartData.labels}
                                 values={chartData.values}
                                 label={selectedStat === "trips" ? "عدد الرحلات" : "التقييمات"}
-                                color={"#10b981"} // Green color
                                 height="20rem"
                                 className="h-full w-full"
                                 style={{ height: "100%" }}

@@ -13,7 +13,7 @@ const Topbar = () => {
   return (
     <div
       dir="rtl"
-      className="fixed top-0 h-[72px] flex items-center justify-between px-4 sm:px-6 py-[14px] bg-[var(--bg-card)] z-20 transition-all duration-300"
+      className="fixed top-0 h-[72px] flex items-center justify-between px-4 sm:px-6 py-[14px] bg-[var(--bg-card)] z-9999 transition-all duration-300"
       style={{
         width: isSidebarOpen ? "calc(100% - 240px)" : "calc(100% - 72px)",
         right: isSidebarOpen ? "240px" : "72px",

@@ -11,18 +11,8 @@ import doneIcon from "@/assets/icons/table/done small.svg";
 import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import trips from "@/assets/icons/common/trips.svg";
 import calender from "@/assets/icons/common/calender.svg";
-/**
- * A reusable header card to display summary information for an entity (e.g., company, user).
- * @param {object} props
- * @param {string} props.title - The main title to display.
- * @param {string} props.entityType - The type of entity: 'company' or 'user'.
- * @param {string} [props.imageUrl] - The URL for the primary image/avatar.
- * @param {number} [props.rating] - A rating score to display.
- * @param {Array<object>} [props.stats] - An array of stats, e.g., [{ value: 55, label: 'Trips' }].
- * @param {string} [props.date] - A date string to display with a calendar icon.
- * @param {string} [props.status] - The status of the entity ('active', 'inactive', etc.).
- * @param {function} props.onStatusChangeClick - The function to call when the status change button is clicked.
- */
+import BannedStroke from "@/assets/icons/common/Banned Stroke.svg";
+
 export default function HeaderInfoCard({
                                            title,
                                            entityType,
@@ -43,15 +33,19 @@ export default function HeaderInfoCard({
 
     const statusDetails = {
         'فعالة': { text: 'فعالة', icon: doneIcon, bg: 'bg-green-100/60', text_color: 'text-green' },
+        'نشط': { text: 'نشط', icon: doneIcon, bg: 'bg-green-100/60', text_color: 'text-green' },
         'حظر مؤقت': { text: 'حظر مؤقت', icon: Warning, bg: 'bg-gold-500/10', text_color: 'text-gold' },
         'تم الإنذار': { text: 'تم الإنذار', icon: Warning, bg: 'bg-gold-500/10', text_color: 'text-gold' },
         'تم الانذار': { text: 'تم الإنذار', icon: Warning, bg: 'bg-gold-500/10', text_color: 'text-gold' },
-        'حظر دائم': { text: 'حظر دائم', icon: Banned, bg: 'bg-red-50', text_color: 'text-red-600' },
+        'حظر نهائي': { text: 'حظر نهائي', icon: Banned, bg: 'bg-red-50', text_color: 'text-red-600' },
         'قيد الحذف': { text: 'قيد الحذف', icon: canceledIcon, bg: 'bg-red-50', text_color: 'text-red-600' },
         'default': { text: 'غير محدد', icon: null, bg: 'bg-gray-100', text_color: 'text-gray-600' },
     };
 
     const currentStatus = statusDetails[status] || statusDetails['default'];
+
+    // Check if user is banned
+    const isBanned = status === 'حظر مؤقت' || status === 'حظر نهائي';
 
     return (
         <div className="bg-white px-10 py-6 min-h-[288px] rounded-2xl shadow-sm w-full flex items-center justify-between flex-wrap gap-4" dir="rtl">
@@ -66,7 +60,7 @@ export default function HeaderInfoCard({
                 </div>
                 <div>
                     <h1 className="text-h1-bold-32 text-gray-800">{title}</h1>
-                    {rating > 0 && (
+                    {entityType === 'company' && rating > 0 && (
                         <div className="flex items-center gap-1 text-yellow-500 mt-1">
                             <Star size={20} fill="currentColor" />
                             <span className="text-xl font-bold text-gray-700">{rating}</span>
@@ -117,13 +111,22 @@ export default function HeaderInfoCard({
                     <div className="flex items-center gap-4">
                         <button
                             onClick={onStatusChangeClick}
-                            className="min-w-[150px] rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200 bg-red-500 text-white px-5 py-3"
+                            className={`flex items-center justify-center cursor-pointer gap-2 min-w-[150px] rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200 ring-2 px-5 py-3 ${
+                                isBanned
+                                    ? 'ring-green text-green'
+                                    : 'ring-red text-red'
+                            }`}
                         >
-                            حظر المستخدم
+                            {isBanned ? 'إلغاء الحظر' : 'حظر'}
+                            <img
+                                src={isBanned ? doneIcon : BannedStroke}
+                                alt={isBanned ? 'إلغاء الحظر' : 'حظر المستخدم'}
+                                className="w-5 h-5"
+                            />
                         </button>
                         <span className={`flex items-center justify-center min-w-[150px] px-5 py-3 text-center text-md font-semibold rounded-full ${currentStatus.bg} ${currentStatus.text_color}`}>
-                            {currentStatus.icon && <img src={currentStatus.icon} alt={currentStatus.text} className="ml-1 w-6 h-6" />}
                             {currentStatus.text}
+                            {currentStatus.icon && <img src={currentStatus.icon} alt={currentStatus.text} className="mr-1 w-6 h-6" />}
                         </span>
                     </div>
                 )}

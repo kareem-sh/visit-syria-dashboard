@@ -28,6 +28,7 @@ const DialogTable = ({
                 rowGap={rowGap}
                 rowHeight={rowHeight}
                 onRowClick={handleRowClick}
+                entityType={"user"}
             />
 
             {selectedRow && (

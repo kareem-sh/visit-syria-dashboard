@@ -5,7 +5,9 @@ import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
 import Banned from "@/assets/icons/table/Banned.svg";
-import Warning from  "@/assets/icons/table/Warning.svg"
+import Warning from "@/assets/icons/table/Warning.svg";
+import CompanyProfile from '@/assets/images/Company Profile.svg';
+import UserProfile from '@/assets/images/User Profile.svg';
 
 const CommonTable = ({
                          columns,
@@ -14,7 +16,8 @@ const CommonTable = ({
                          rowHeight = "h-[75px]",
                          title,
                          basePath = "",
-                         onRowClick, // NEW prop
+                         onRowClick,
+                         entityType = "company", // "company" or "user"
                      }) => {
     const navigate = useNavigate();
 
@@ -24,9 +27,9 @@ const CommonTable = ({
 
     const handleRowClick = (row) => {
         if (onRowClick) {
-            onRowClick(row); // NEW: Use custom handler if provided
+            onRowClick(row);
         } else if (basePath) {
-            navigate(`/${basePath}/${row.id}`); // Existing navigation
+            navigate(`/${basePath}/${row.id}`);
         }
     };
 
@@ -42,11 +45,12 @@ const CommonTable = ({
                 break;
             case "تم الإلغاء":
             case "مرفوض":
+            case "قيد الحذف":
                 icon = canceledIcon;
                 bg = "bg-red-50";
                 text = "text-red-600";
                 break;
-            case "حظر دائم":
+            case "حظر نهائي":
                 icon = Banned;
                 bg = "bg-red-50";
                 text = "text-red-600";
@@ -80,6 +84,65 @@ const CommonTable = ({
         );
     };
 
+    const renderAvatar = (row, accessor) => {
+        const name = row[accessor];
+        const imageUrl = row.image || row.avatar || row.profileImage;
+
+        // Determine the appropriate fallback image based on entityType
+        const fallbackImage = entityType === "company" ? CompanyProfile : UserProfile;
+
+        // If we have a specific image URL, use it
+        if (imageUrl) {
+            return (
+                <img
+                    src={imageUrl}
+                    alt={name}
+                    className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
+                    onError={(e) => {
+                        e.target.src = fallbackImage;
+                    }}
+                />
+            );
+        }
+
+        // For companies, use dicebear with company name
+        if (entityType === "company") {
+            return (
+                <img
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&size=32`}
+                    alt={name}
+                    className="w-6 h-6 rounded-full flex-shrink-0"
+                    onError={(e) => {
+                        e.target.src = CompanyProfile;
+                    }}
+                />
+            );
+        }
+
+        // For users, use dicebear with user name
+        if (entityType === "user") {
+            return (
+                <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&size=32`}
+                    alt={name}
+                    className="w-6 h-6 rounded-full flex-shrink-0"
+                    onError={(e) => {
+                        e.target.src = UserProfile;
+                    }}
+                />
+            );
+        }
+
+        // Fallback to appropriate image based on entityType
+        return (
+            <img
+                src={fallbackImage}
+                alt={name}
+                className="w-6 h-6 rounded-full flex-shrink-0"
+            />
+        );
+    };
+
     return (
         <div className="overflow-visible relative w-full">
             {title && (
@@ -103,23 +166,17 @@ const CommonTable = ({
                         key={rowIndex}
                         className={`grid bg-white px-[16px] rounded-2xl shadow-sm text-sm text-gray-700 cursor-pointer hover:shadow-md transition-shadow ${rowHeight}`}
                         style={gridStyle}
-                        onClick={() => handleRowClick(row)} // Changed to pass entire row
+                        onClick={() => handleRowClick(row)}
                     >
                         {columns.map((col, colIndex) => (
                             <div
                                 key={colIndex}
                                 className="flex items-center justify-center gap-2 truncate text-center"
                             >
-                                {col.accessor === "company" ? (
+                                {col.accessor === "company" || col.accessor === "name" ? (
                                     <div className="flex items-center gap-2">
-                                        <img
-                                            src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-                                                row.company
-                                            )}&size=32`}
-                                            alt={row.company}
-                                            className="w-6 h-6 rounded-full flex-shrink-0"
-                                        />
-                                        <span>{row.company}</span>
+                                        {renderAvatar(row, col.accessor)}
+                                        <span>{row[col.accessor]}</span>
                                     </div>
                                 ) : col.accessor === "status" ? (
                                     renderStatusBadge(row[col.accessor])

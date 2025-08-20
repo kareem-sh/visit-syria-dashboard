@@ -17,7 +17,7 @@ export default function InfoBox({ icon, title, count, onClick }) {
 
             <button
                 onClick={onClick}
-                className="text-green-600 pr-10 text-sm mt-1"
+                className="text-green pr-10 text-sm mt-1"
             >
         <span className="flex items-center text-body-caption-12 gap-1 hover:cursor-pointer">
           التفاصيل

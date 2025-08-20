@@ -17,7 +17,7 @@ const Sidebar = () => {
 
   return (
       <aside
-          className={`fixed top-0 right-0 h-full z-30 transition-all duration-300 ${
+          className={`fixed top-0 right-0 h-full z-9999 transition-all duration-300 ${
               isSidebarOpen ? "w-[240px]" : "w-[72px]"
           } ${isTabletOrSmaller ? "shadow-xl" : ""}`}
           aria-label="Sidebar navigation"

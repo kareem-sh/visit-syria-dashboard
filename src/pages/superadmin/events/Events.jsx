@@ -142,6 +142,7 @@ const Events = () => {
                 showHeader={false}
                 showSeeAll={false}
                 basePath={"events"}
+                entityType={"event"}
             />
         </div>
     );

@@ -95,5 +95,22 @@ export const sampleRequests = [
         place: "حماة",
         lat: 35.1333,
         lon: 36.75
+    },
+    {
+        id:6,
+        license_number: "13579",
+        name: "شركة الغذاء",
+        date: "2025-07-28",
+        stakeholder_name: "لمى",
+        company_name: "شركة الغذاء",
+        establishment_date: "2022-05-15",
+        email: "food@food.com",
+        phone: "944556677",
+        country_code: "+963",
+        documents: ["food1.pdf", "food2.pdf"],
+        description: "توزيع المواد الغذائية",
+        place: "حماة",
+        lat: 35.1333,
+        lon: 36.75
     }
 ];
