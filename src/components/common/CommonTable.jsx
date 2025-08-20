@@ -38,7 +38,7 @@ const CommonTable = ({
             case "مقبول":
                 icon = doneIcon;
                 bg = "bg-green-100/60";
-                text = "text-grey";
+                text = "text-green";
                 break;
             case "تم الإلغاء":
             case "مرفوض":

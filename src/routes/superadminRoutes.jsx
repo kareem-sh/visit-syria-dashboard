@@ -9,10 +9,9 @@ import PlaceDetailsPage from "@/pages/superadmin/Places/PlaceDetailsPage.jsx";
 import Places from "@/pages/superadmin/Places/Places.jsx";
 import CityDetails from "@/pages/superadmin/Places/CityDetails.jsx";
 import CitySection from "@/pages/superadmin/Places/CitySection.jsx";
-import PlaceForm from "@/components/dialog/PlaceForm.jsx";
-import OrdersList from "@/components/common/RequestsList.jsx";
-import CompanyDialog from "@/components/dialog/CompanyDialog.jsx";
 import Companies from "@/pages/superadmin/companies/Companies.jsx";
+import CompanyInfoCard from "@/components/common/CompanyInfoCard.jsx";
+import CompanyDetails from "@/pages/superadmin/companies/CompanyDetails.jsx";
 
 const superadminRoutes = [
     { path: "/", element: <DashboardOverview /> },
@@ -25,9 +24,10 @@ const superadminRoutes = [
     { path: "/places/cities/:cityname", element: <CityDetails /> },
     { path: "/places/cities/:cityname/:section", element: <CitySection /> },
     { path: "/places/cities/:cityname/:section/:id", element: <PlaceDetailsPage /> },
-    { path: "/test", element: <OrdersList /> },
-    { path: "/test2", element: <CompanyDialog /> },
     { path: "/companies", element: <Companies /> },
+    { path: "/companies/:id", element: <CompanyDetails/> },
+    { path: "/companies/:id/trips/:id", element: <TripDetailsPage /> },
+
 
 ];
 
