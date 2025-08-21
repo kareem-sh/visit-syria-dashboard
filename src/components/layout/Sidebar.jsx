@@ -17,7 +17,7 @@ const Sidebar = () => {
 
   return (
       <aside
-          className={`fixed top-0 right-0 h-full z-9999 transition-all duration-300 ${
+          className={`fixed top-0 right-0 h-full z-50 transition-all duration-300 ${
               isSidebarOpen ? "w-[240px]" : "w-[72px]"
           } ${isTabletOrSmaller ? "shadow-xl" : ""}`}
           aria-label="Sidebar navigation"
@@ -27,7 +27,7 @@ const Sidebar = () => {
             boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
           }}
       >
-        <div className="h-full flex flex-col justify-between py-6">
+        <div className="h-full flex flex-col justify-between py-5">
           {/* Top Section: Logo */}
           <div className="flex flex-col items-center">
             <div className="mb-8 flex items-center justify-center">
@@ -47,7 +47,7 @@ const Sidebar = () => {
             </div>
 
             {/* Menu Items */}
-            <nav className="w-full space-y-2">
+            <nav className="w-full space-y-0.5">
               {sidebarMenu
                   .filter((item) => item.roles.includes(user.role))
                   .map((item) => (

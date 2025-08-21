@@ -3,14 +3,12 @@ import Trips from "@/pages/superadmin/dashboard-status/Trips";
 import Profits from "@/pages/superadmin/dashboard-status/profits";
 import TripDetailsPage from "@/pages/superadmin/trips/TripDetailsPage.jsx";
 import Events from "@/pages/superadmin/events/Events.jsx";
-import DialogTest from "@/pages/superadmin/events/DialogTest.jsx";
 import EventDetails from "@/pages/superadmin/events/EventsDetails.jsx";
 import PlaceDetailsPage from "@/pages/superadmin/Places/PlaceDetailsPage.jsx";
 import Places from "@/pages/superadmin/Places/Places.jsx";
 import CityDetails from "@/pages/superadmin/Places/CityDetails.jsx";
 import CitySection from "@/pages/superadmin/Places/CitySection.jsx";
 import Companies from "@/pages/superadmin/companies/Companies.jsx";
-import CompanyInfoCard from "@/components/common/CompanyInfoCard.jsx";
 import CompanyDetails from "@/pages/superadmin/companies/CompanyDetails.jsx";
 import Users from "@/pages/superadmin/users/Users.jsx";
 import UserDetails from "@/pages/superadmin/users/UserDetails.jsx";
@@ -18,6 +16,10 @@ import UserTrips from "@/pages/superadmin/users/UserTrips.jsx";
 import UserEvents from "@/pages/superadmin/users/UserEvents.jsx";
 import UserPosts from "@/pages/superadmin/users/UserPosts.jsx";
 import Community from "@/pages/superadmin/community/Coumminty.jsx";
+import Posts from "@/pages/superadmin/community/Posts.jsx";
+import PostDetails from "@/pages/superadmin/community/PostDetails.jsx"
+import AboutSyria from "@/pages/superadmin/about-syria/AboutSyria.jsx";
+import BlogDetails from "@/pages/superadmin/about-syria/BlogDetails.jsx";
 
 const superadminRoutes = [
     { path: "/", element: <DashboardOverview /> },
@@ -39,6 +41,10 @@ const superadminRoutes = [
     { path: "/users/:id/events", element: <UserEvents /> },
     { path: "/users/:id/posts", element: <UserPosts /> },
     { path: "/community", element: <Community /> },
+    { path: "/community/posts", element: <Posts /> },
+    { path: "/community/posts/:id", element: <PostDetails /> },
+    { path: "/about-syria", element: <AboutSyria /> },
+    { path: "/about-syria/blogs/:id", element: <BlogDetails /> },
 
 
 ];

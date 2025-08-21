@@ -8,6 +8,8 @@ import Map from "@/components/common/Map";
 import DocumentViewer from "@/components/common/DocumentViewer";
 import CompanyProfile from "@/assets/images/Company Profile.svg";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
+import Decline from "@/assets/icons/common/decline.svg";
+import Approve from "@/assets/icons/common/approve.svg";
 
 export default function CompanyDialog({
                                           open,
@@ -438,8 +440,22 @@ export default function CompanyDialog({
                             )}
                             {mode === "view" && (
                                 <div className="flex gap-3">
-                                    <button onClick={handleAcceptClick} className="flex-1 bg-green text-white py-3 rounded-xl hover:shadow-md cursor-pointer transition">قبول</button>
-                                    <button onClick={handleRejectClick} className="flex-1 bg-red-600 text-white py-3 rounded-xl hover:shadow-md cursor-pointer transition">رفض</button>
+                                    <button
+                                        className="flex items-center ص w-full justify-center shadow-md shadow-grey-400 gap-2 rounded-2xl cursor-pointer px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-green"
+                                        onClick={handleAcceptClick}
+                                    >
+
+                                        قبول
+                                        <img src={Approve} alt="Approve" className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        className="flex items-center w-full justify-center gap-2 shadow-md shadow-grey-400  rounded-2xl cursor-pointer px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-red-500"
+                                        onClick={handleRejectClick}
+                                    >
+
+                                        رفض
+                                        <img src={Decline} alt="Decline" className="w-5 h-5" />
+                                    </button>
                                 </div>
                             )}
                         </div>

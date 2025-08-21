@@ -1,95 +1,123 @@
+// components/dialog/PostReviewDialog.jsx
 import React from 'react';
-import { X, User, Check, XIcon } from 'lucide-react';
+import { X } from 'lucide-react';
+import Approve from "@/assets/icons/common/approve.svg";
+import Decline from "@/assets/icons/common/decline.svg";
 
-// This file is a self-contained React application.
-// To run it:
-// 1. Create a new React project (e.g., using Vite: `npm create vite@latest my-app -- --template react`).
-// 2. Navigate into the project folder (`cd my-app`).
-// 3. Install Tailwind CSS and lucide-react: `npm install -D tailwindcss postcss autoprefixer && npm install lucide-react`.
-// 4. Initialize Tailwind: `npx tailwindcss init -p`.
-// 5. Configure `tailwind.config.js` to include your source files.
-// 6. Add Tailwind directives to your main CSS file (`src/index.css`).
-// 7. Replace the contents of `src/App.jsx` with this code.
-// 8. Run the development server: `npm run dev`.
+// The main Dialog component
+const PostReviewDialog = ({ request, isOpen, onClose, onAccept, onReject }) => {
+    if (!isOpen) return null;
 
-// Reusable Tag component for clarity
-const Tag = ({ children }) => (
-    <span className="bg-slate-100 text-slate-600 text-sm font-medium px-4 py-1.5 rounded-full">
-    {children}
-  </span>
-);
+    // Format date for display in DD-MM-YYYY format (reversed)
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
 
-// The main Dialog component provided by you
-const PostReviewDialog = () => {
+        // Parse the date string
+        const date = new Date(dateString);
+
+        // Format as DD-MM-YYYY (reversed)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${day}-${month}-${year}`;
+    };
+
     return (
         // Overlay: Fills the entire screen with a semi-transparent background
-        <div className="bg-slate-800/60 fixed inset-0 flex items-center justify-center p-4 font-sans">
-            {/* Dialog Box: The main container for the dialog content */}
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] p-4" onClick={onClose}>
+            {/* Dialog Box: The main container for the dialog content - made scrollable */}
             <div
-                className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-2xl relative flex flex-col gap-5"
+                className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-3xl relative flex flex-col max-h-[90vh] overflow-y-auto"
                 dir="rtl" // Sets the text direction to right-to-left for Arabic
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Header Section */}
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start pb-4">
                     <div className="text-right">
                         <h2 className="text-2xl font-bold text-slate-800">المنشور</h2>
-                        <p className="text-sm text-slate-500 mt-1">تاريخ تقديم الطلب: 26/5/2025</p>
+                        <p className="text-sm text-slate-500 mt-1">
+                            تاريخ تقديم الطلب: {request ? formatDate(request.date) : ''}
+                        </p>
                     </div>
                     {/* Close Button */}
-                    <button className="absolute top-6 left-6 text-slate-500 hover:text-slate-800 transition-colors">
+                    <button
+                        className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex-shrink-0"
+                        onClick={onClose}
+                    >
                         <X size={28} />
                     </button>
                 </div>
 
-                {/* User Information Section */}
-                <div className="flex items-center justify-end gap-3">
-                    <span className="font-semibold text-slate-700">أحمد محسن</span>
-                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
-                        <User size={20} className="text-slate-500" />
+                {/* Content Area */}
+                <div className="space-y-5">
+                    {/* User Information Section - Image next to name */}
+                    <div className="flex items-center justify-start gap-3">
+                        <img
+                            src={request?.userImage || request?.image || "https://i.imgur.com/G4PCD8y.jpeg"}
+                            alt={request?.name || "User image"}
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200 flex-shrink-0"
+                            onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/e2e8f0/475569?text=U'; }}
+                        />
+                        <span className="font-semibold text-slate-700">
+                            {request?.name || ''}
+                        </span>
                     </div>
-                </div>
 
-                {/* Main Image */}
-                <img
-                    src="https://i.imgur.com/G4PCD8y.jpeg"
-                    alt="Water wheel in a lush garden"
-                    className="rounded-xl w-full object-cover aspect-[16/9]"
-                    onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x338/e2e8f0/475569?text=Image+Not+Found'; }}
-                />
+                    {/* Main Post Image (different from user profile image) */}
+                    <img
+                        src={request?.images || request?.postImage || "https://i.imgur.com/G4PCD8y.jpeg"}
+                        alt={request?.name || "Post image"}
+                        className="rounded-xl w-full object-cover aspect-[16/9]"
+                        onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x338/e2e8f0/475569?text=Image+Not+Found'; }}
+                    />
 
-                {/* Description Text */}
-                <p className="text-slate-600 text-right leading-relaxed">
-                    بينتجت حستحبدسدسبربيهج حتجسبدحهمحتدحتحسدتحسدبريمحت دحتكسبدحبرتحسدبتحه ححتكسبدحبرتسهديث حهدحنسبدبتحيمهت ههدحنسبهب بينتجت حستحبدسدسبربيهج حتجسبدحهمحتدحتحسدتحسدبريمحت دحتكسبدحبرتحسدبتحه.
-                </p>
+                    {/* Description Text */}
+                    <div>
+                        <p className="text-slate-600 text-right leading-relaxed">
+                            {request?.description || ""}
+                        </p>
+                    </div>
 
-                {/* Tags Section */}
-                <div className="flex flex-wrap justify-end gap-2">
-                    <Tag>أثرية</Tag>
-                    <Tag>طبيعية</Tag>
-                    <Tag>ترفيهية</Tag>
-                    <Tag>دينية</Tag>
-                    <Tag>تاريخية</Tag>
-                    <Tag>ثقافية</Tag>
-                </div>
-
-                {/* Action Buttons Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                    {/* Accept Button */}
-                    <button className="flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-teal-500">
-                        <div className="bg-black/20 w-6 h-6 rounded-full flex items-center justify-center">
-                            <Check size={16} />
+                    {/* Tags Section - Justified between with equal width */}
+                    {request?.tags?.length > 0 && (
+                        <div className="flex flex-wrap justify-start gap-8">
+                            {request.tags.map((tag, i) => (
+                                <span
+                                    key={i}
+                                    className="bg-gray-100 text-green px-3 py-2.5 rounded-full text-body-bold-14 flex-1 text-center max-w-[130px]"
+                                >
+                                    {tag}
+                                </span>
+                            ))}
                         </div>
-                        <span>قبول</span>
+                    )}
+                </div>
+
+                {/* Action Buttons Section - With imported icons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-4 border-t border-slate-200">
+                    {/* Accept Button */}
+                    <button
+                        className="flex items-center justify-center shadow-md shadow-grey-400 gap-2 rounded-2xl cursor-pointer px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-green"
+                        onClick={onAccept}
+                    >
+
+                        قبول
+                        <img src={Approve} alt="Approve" className="w-5 h-5" />
                     </button>
                     {/* Reject Button */}
-                    <button className="flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-red-600">
-                        <div className="bg-black/20 w-6 h-6 rounded-full flex items-center justify-center">
-                            <XIcon size={16} />
-                        </div>
-                        <span>رفض</span>
+                    <button
+                        className="flex items-center justify-center gap-2 shadow-md shadow-grey-400  rounded-2xl cursor-pointer px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-red-500"
+                        onClick={onReject}
+                    >
+
+                        رفض
+                        <img src={Decline} alt="Decline" className="w-5 h-5" />
                     </button>
                 </div>
             </div>
         </div>
     );
 };
+
+export default PostReviewDialog;

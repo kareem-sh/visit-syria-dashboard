@@ -1,25 +1,72 @@
 // pages/Community.jsx
 import React, { useState, useCallback, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import CommunityRequestsList from "@/components/common/CommunityRequestsList";
 import CommonTable from "@/components/common/CommonTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
 import Chart from "@/components/common/Chart.jsx";
+import PostReviewDialog from "@/components/dialog/PostReviewDialog";
+import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import { sampleRequests } from "@/data/companies.js";
 
 export default function Community() {
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [actionType, setActionType] = useState(null);
+    const [confirmMessage, setConfirmMessage] = useState("");
     const [currentFilter, setCurrentFilter] = useState("الكل");
-    const navigate = useNavigate();
+
+    // Format date function
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${day}-${month}-${year}`;
+    };
 
     const handleSelectRequest = (request) => {
         setSelectedRequest(request);
+        setIsDialogOpen(true);
         console.log("Selected request:", request);
     };
 
-    const handleRowClick = (row) => {
-        navigate(`/posts/${row.id}`);
+    const handleCloseDialog = () => {
+        setIsDialogOpen(false);
+        setSelectedRequest(null);
     };
+
+    const handleAcceptRequest = () => {
+        setActionType('accept');
+        setConfirmMessage("هل أنت متأكد من قبول هذا الطلب؟");
+        setShowConfirmDialog(true);
+    };
+
+    const handleRejectRequest = () => {
+        setActionType('reject');
+        setConfirmMessage("هل أنت متأكد من رفض هذا الطلب؟");
+        setShowConfirmDialog(true);
+    };
+
+    const handleConfirmAction = (reason) => {
+        if (actionType === 'accept') {
+            console.log("Accepting request:", selectedRequest);
+            // Add your accept logic here
+        } else if (actionType === 'reject') {
+            console.log("Rejecting request:", selectedRequest, "Reason:", reason);
+            // Add your reject logic here
+        }
+
+        setShowConfirmDialog(false);
+        setIsDialogOpen(false);
+        setSelectedRequest(null);
+        setActionType(null);
+    };
+
 
     // Mock data for community members - limited to 6 items
     const mockCommunityMembers = [
@@ -147,6 +194,31 @@ export default function Community() {
 
     return (
         <div className="flex flex-col gap-8 p-2" dir="rtl">
+            {/* Post Review Dialog */}
+            <PostReviewDialog
+                request={selectedRequest}
+                isOpen={isDialogOpen}
+                onClose={handleCloseDialog}
+                onAccept={handleAcceptRequest}
+                onReject={handleRejectRequest}
+            />
+
+            {/* Confirmation Dialog */}
+            <ConfirmationDialog
+                isOpen={showConfirmDialog}
+                onClose={() => setShowConfirmDialog(false)}
+                onConfirm={handleConfirmAction}
+                title={actionType === 'accept' ? "قبول المنشور" : "رفض المنشور"}
+                message={confirmMessage}
+                confirmText={actionType === 'accept' ? "قبول" : "رفض"}
+                confirmColor={actionType === 'accept' ? "green" : "red"}
+                showTextInput={actionType === 'reject'} // Show text input only for rejections
+                textInputLabel="سبب الرفض"
+                textInputPlaceholder="يرجى كتابة سبب الرفض"
+                requiredTextInput={actionType === 'reject'} // Require reason only for rejections
+                requestDate={selectedRequest ? formatDate(selectedRequest.date) : null}
+            />
+
             {/* Chart Section */}
             <div className="flex flex-col gap-4">
                 <div className="flex gap-6 items-center text-gray-800 px-2 justify-between">
@@ -182,7 +254,7 @@ export default function Community() {
                     <div className="flex-1">
                         {/* Table Title and Controls - Title at start, buttons at end */}
                         <div className="flex items-center justify-between mb-4 px-2">
-                            <h1 className="text-h1-bold-24 text-gray-800">أعضاء المجتمع</h1>
+                            <h1 className="text-h1-bold-24 text-gray-800">المنشورات</h1>
                             <div className="flex items-center">
                                 <SortFilterButton
                                     options={filterOptions.map((opt) => opt.label)}
@@ -195,7 +267,7 @@ export default function Community() {
                                     }}
                                 />
                                 <Link
-                                    to="/posts"
+                                    to="/community/posts"
                                     className="text-gray-400 hover:text-gray-500 font-normal text-sm px-3 py-2 transition-colors"
                                 >
                                     مشاهدة الكل
@@ -208,9 +280,8 @@ export default function Community() {
                             <CommonTable
                                 columns={tableColumns}
                                 data={filteredData}
-                                basePath="posts"
+                                basePath="community/posts"
                                 entityType='user'
-                                onRowClick={handleRowClick}
                             />
                         </div>
                     </div>
@@ -219,12 +290,12 @@ export default function Community() {
                     <div className="w-full lg:w-1/3">
                         <div className="flex flex-col h-full">
                             {/* Community Requests Title */}
-                            <h2 className="text-h1-bold-24 text-gray-800 mt-2 mb-5">طلبات المجتمع</h2>
+                            <h2 className="text-h1-bold-24 text-gray-800 mt-2 mb-5">قائمة المنشورات المعلقة</h2>
 
                             {/* Requests List with fixed height */}
-                            <div className="h-[622px]"> {/* Fixed height container */}
+                            <div className="h-[622px]">
                                 <CommunityRequestsList
-                                    requests={sampleRequests.slice(0, 8)} // Increased to test scrolling
+                                    requests={sampleRequests.slice(0, 8)}
                                     selectedRequest={selectedRequest}
                                     onSelectRequest={handleSelectRequest}
                                 />

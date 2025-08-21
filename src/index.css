@@ -31,6 +31,14 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: "BC Arabic";
+  src: url("../public/fonts/ArbFONTS-BritishCouncil-Arabic-Light.ttf")
+  format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* Define your color palette */
 @theme {
@@ -274,6 +282,12 @@
 }
 
 /* Paragraphs - Regular */
+.text-body-regular-20-auto {
+  font-size: 20px;
+  line-height: 1.5em;
+  font-weight: 400;
+}
+
 .text-body-regular-18-auto {
   font-size: 18px;
   line-height: 1.5em;
@@ -313,6 +327,16 @@
   font-size: 12px;
   line-height: normal;
   font-weight: 700;
+}
+
+. {
+  font-size: 12px;
+  line-height: normal;
+  font-weight: 400;
+}
+
+.Toastify__toast-container {
+  z-index: 10000 !important;
 }
 
 @layer components {

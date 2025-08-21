@@ -89,7 +89,7 @@ export default function ConfirmationDialog({
                             }}
                             placeholder={textInputPlaceholder}
                             rows={4}
-                            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green focus:border-green text-right text-lg"
+                            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red focus:border-red text-right text-lg"
                         />
                         {inputError && (
                             <p className="text-red-500 text-lg mt-2 text-right">{inputError}</p>

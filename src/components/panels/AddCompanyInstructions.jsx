@@ -38,8 +38,9 @@ export default function AddCompanyInstructions({ onAddClick }) {
                     onClick={onAddClick}
                     className="w-full bg-green text-white py-3 rounded-lg hover:bg-green-dark shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 font-semibold cursor-pointer"
                 >
+                    إضافة
                     <Plus size={20} />
-                    إضافة طلب شركة
+
                 </button>
             </div>
         </div>

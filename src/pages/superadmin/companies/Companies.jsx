@@ -5,7 +5,7 @@ import AddCompanyInstructions from "@/components/panels/AddCompanyInstructions";
 import CompanyDialog from "@/components/dialog/CompanyDialog";
 import Chart from "@/components/common/Chart.jsx";
 import CommonTable from "@/components/common/CommonTable";
-import SortFilterButton from "@/components/common/SortFilterButton"; // Import the SortFilterButton
+import SortFilterButton from "@/components/common/SortFilterButton";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { companiesData, sampleRequests } from "@/data/companies.js";

@@ -2,7 +2,7 @@ import React from "react";
 import { FaStar } from "react-icons/fa";
 import NoCommentsYet from "@/assets/images/No Comments Yet.png";
 
-const CommentsSection = ({ comments = [], status = null }) => {
+const CommentsSection = ({ comments = [], status = null ,showRatings =true}) => {
     // Check if there are no comments
     const noComments = !comments || comments.length === 0;
 
@@ -32,21 +32,21 @@ const CommentsSection = ({ comments = [], status = null }) => {
                                 <img
                                     src={comment.user_avatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
                                     alt="avatar"
-                                    className="w-10 h-10 rounded-full object-cover"
+                                    className="w-11 h-11 rounded-full object-cover"
                                 />
-                                <div>
-                                    <h4 className="font-semibold text-sm">{comment.user_name}</h4>
-                                    <span className="text-xs text-gray-400">{comment.created_at}</span>
+                                <div className="mt-2">
+                                    <h4 className="text-body-bold-16">{comment.author}</h4>
+                                    <span className="text-body-regular-caption-12  text-grey-600">{comment.date}</span>
                                 </div>
                             </div>
-                            <p className="text-sm text-gray-700 mt-2">{comment.body}</p>
+                            <p className="text-body-regular-16-auto mt-3 text-(--text-paragraph)">{comment.text}</p>
                         </div>
-
-                        {/* Rating on the right */}
+                        {showRatings && (
                         <div className="flex items-center text-yellow-500 text-sm gap-1 min-w-[60px]">
                             <FaStar />
-                            <span>{comment.rating_value || "4.5"}/5</span>
+                            <span>{comment.rating || "4.5"}/5</span>
                         </div>
+                        )}
                     </div>
                 ))
             )}
