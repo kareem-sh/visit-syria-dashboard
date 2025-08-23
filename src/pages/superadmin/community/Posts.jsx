@@ -1,11 +1,22 @@
 // pages/Posts.jsx
 import React, { useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import CommonTable from "@/components/common/CommonTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
+import { PageSkeleton } from "@/components/common/PageSkeleton.jsx";
+import { getPosts } from "@/services/posts/postsApi";
 
 export default function Posts() {
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const [selectedCategory, setSelectedCategory] = useState("الكل");
+
+    // Fetch posts from cache first, then API if needed
+    const { data: postsData, isLoading, error } = useQuery({
+        queryKey: ['allPosts'],
+        queryFn: () => getPosts(),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        cacheTime: 10 * 60 * 1000, // 10 minutes
+    });
 
     // Available categories - display names (what user sees)
     const displayCategories = ["الكل", "تاريخية", "أثرية", "ترفيهية", "طبيعية", "دينية", "ثقافية"];
@@ -16,109 +27,8 @@ export default function Posts() {
         // Add other mappings if needed in the future
     };
 
-    // Mock data for posts with user images and categories (simulating API data)
-    const mockPosts = [
-        {
-            id: 1,
-            title: "رحلة إلى جبلة الساحرة",
-            author: "أحمد محمد",
-            authorImage: "https://i.pravatar.cc/150?img=1",
-            status: "مقبول",
-            date: "2023-10-15",
-            postContent: "تجربتي الرائعة في رحلة جبلة كانت ممتازة ورائعة جداً، استمتعت بالمناظر الخلابة والطبيعة الساحرة التي تقدمها هذه المدينة الجميلة.",
-            categories: ["طبيعية", "ترفيهية"]
-        },
-        {
-            id: 2,
-            title: "مهرجان الربيع في دمشق",
-            author: "فاطمة علي",
-            authorImage: "https://i.pravatar.cc/150?img=2",
-            status: "مقبول",
-            date: "2023-10-14",
-            postContent: "صور من مهرجان الربيع في دمشق الجميلة، حيث الأزهار تتفتح والأجواء الربيعية تعم المكان بسعادة وبهجة.",
-            categories: ["ترفيهية", "ثقافية"]
-        },
-        {
-            id: 3,
-            title: "جولة في الأسواق القديمة",
-            author: "محمد حسن",
-            authorImage: "https://i.pravatar.cc/150?img=3",
-            status: "مرفوض",
-            date: "2023-10-13",
-            postContent: "فيديو جولة في الأسواق القديمة الرائعة في دمشق، حيث التاريخ والحضارة يتجسدان في كل زاوية من زوايا هذه الأسواق العريقة.",
-            categories: ["تاريخية", "اثرية"] // API sends "اثرية"
-        },
-        {
-            id: 4,
-            title: "نصائح للسفر إلى سوريا",
-            author: "سارة خالد",
-            authorImage: "https://i.pravatar.cc/150?img=4",
-            status: "في الانتظار",
-            date: "2023-10-12",
-            postContent: "نصائح للسفر إلى سوريا للسياح، بما في ذلك أفضل الأوقات للزيارة والأماكن التي يجب زيارتها والمأكولات التي يجب تجربتها.",
-            categories: ["ثقافية"]
-        },
-        {
-            id: 5,
-            title: "معرض الصور من حلب",
-            author: "علي إبراهيم",
-            authorImage: "https://i.pravatar.cc/150?img=5",
-            status: "مقبول",
-            date: "2023-10-11",
-            postContent: "معرض الصور من حلب العريقة، حيث تظهر جمالية المدينة القديمة والتراث الثقافي الغني الذي تتمتع به هذه المدينة التاريخية.",
-            categories: ["تاريخية", "اثرية", "ثقافية"] // API sends "اثرية"
-        },
-        {
-            id: 6,
-            title: "مطاعم دمشق الشهية",
-            author: "لينا عبدالله",
-            authorImage: "https://i.pravatar.cc/150?img=6",
-            status: "مقبول",
-            date: "2023-10-10",
-            postContent: "تجربة تناول الطعام في مطاعم دمشق، حيث المأكولات الشهية والنكهات الرائعة التي تقدمها المطاعم الدمشقية التقليدية والحديثة.",
-            categories: ["ثقافية", "ترفيهية"]
-        },
-        {
-            id: 7,
-            title: "القلاع التاريخية في سوريا",
-            author: "ياسر نور",
-            authorImage: "https://i.pravatar.cc/150?img=7",
-            status: "مرفوض",
-            date: "2023-10-09",
-            postContent: "جولة في القلاع التاريخية في سوريا، حيث تروي هذه القلاع قصصاً عن الحضارات القديمة والمعارك التاريخية التي شهدتها هذه الأرض.",
-            categories: ["تاريخية", "اثرية"] // API sends "اثرية"
-        },
-        {
-            id: 8,
-            title: "منتزهات وحدائق دمشق",
-            author: "نورا كمال",
-            authorImage: "https://i.pravatar.cc/150?img=8",
-            status: "في الانتظار",
-            date: "2023-10-08",
-            postContent: "استكشاف منتزهات وحدائق دمشق، حيث المساحات الخضراء والهواء النقي والأجواء الهادئة التي توفرها هذه الأماكن للزوار.",
-            categories: ["طبيعية", "ترفيهية"]
-        },
-        {
-            id: 9,
-            title: "الحرف اليدوية التقليدية",
-            author: "خالد أسعد",
-            authorImage: "https://i.pravatar.cc/150?img=9",
-            status: "مقبول",
-            date: "2023-10-07",
-            postContent: "تعرف على الحرف اليدوية التقليدية في سوريا، حيث الحرفيون المهرة يحافظون على تراثهم ويقدمون تحفاً فنية رائعة تعبر عن الثقافة السورية.",
-            categories: ["ثقافية", "تاريخية"]
-        },
-        {
-            id: 10,
-            title: "المتاحف السورية الرائعة",
-            author: "ريم أحمد",
-            authorImage: "https://i.pravatar.cc/150?img=10",
-            status: "مقبول",
-            date: "2023-10-06",
-            postContent: "زيارة إلى المتاحف السورية الرائعة، حيث يمكن للزوار التعرف على التاريخ الغني والتراث الثقافي الثمين الذي تزخر به سوريا عبر العصور.",
-            categories: ["تاريخية", "اثرية", "ثقافية"] // API sends "اثرية"
-        }
-    ];
+    // Get posts from cache or use empty array if loading/error
+    const posts = postsData?.data || [];
 
     // Filter options for the SortFilterButton
     const filterOptions = [
@@ -137,9 +47,25 @@ export default function Posts() {
         return categoryMapping[apiCategory] || apiCategory;
     };
 
+    // Transform API data for table
+    const tableData = useMemo(() => {
+        return posts.map(post => ({
+            id: post.id,
+            title: post.title || 'بدون عنوان',
+            author: post.user?.name || 'مستخدم غير معروف',
+            authorImage: post.user?.profile_photo || `https://i.pravatar.cc/150?img=${post.id}`,
+            status: post.status === 'Approved' ? 'مقبول' :
+                post.status === 'Rejected' ? 'مرفوض' :
+                    post.status === 'Pending' ? 'في الانتظار' : post.status,
+            date: post.created_at ? new Date(post.created_at).toLocaleDateString('en-BG') : 'غير محدد',
+            postContent: post.description || 'لا يوجد محتوى',
+            categories: post.tags || []
+        }));
+    }, [posts]);
+
     // Filter and sort the table data based on the current filter and selected category
     const filteredData = useMemo(() => {
-        let newData = [...mockPosts];
+        let newData = [...tableData];
 
         // Apply category filter
         if (selectedCategory !== "الكل") {
@@ -177,7 +103,7 @@ export default function Posts() {
         }
 
         return newData;
-    }, [mockPosts, currentFilter, selectedCategory]);
+    }, [tableData, currentFilter, selectedCategory]);
 
     const handleFilterChange = useCallback((filterValue) => {
         setCurrentFilter(filterValue);
@@ -186,6 +112,23 @@ export default function Posts() {
     const handleCategoryChange = (category) => {
         setSelectedCategory(category);
     };
+
+    // Loading state
+    if (isLoading) {
+        return <PageSkeleton rows={8} />;
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <h2 className="text-red-600 text-lg">حدث خطأ في تحميل البيانات</h2>
+                    <p className="text-gray-600">يرجى المحاولة مرة أخرى لاحقاً</p>
+                </div>
+            </div>
+        );
+    }
 
     // Status badge component
     const StatusBadge = ({ status }) => {
@@ -301,8 +244,6 @@ export default function Posts() {
                     data={filteredData}
                     basePath="community/posts"
                     entityType='post'
-                    showPagination={true}
-                    itemsPerPage={10}
                 />
             </div>
         </div>
