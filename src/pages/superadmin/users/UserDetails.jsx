@@ -1,48 +1,91 @@
-// src/pages/superadmin/users/UserDetails.jsx
 import React, { useState } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 import HeaderInfoCard from '@/components/common/HeaderInfoCard';
 import PersonalInformation from '@/pages/superadmin/users/PersonalInformation';
 import Preferences from '@/pages/superadmin/users/Preferences';
 import SecondaryInformation from '@/pages/superadmin/users/SecondaryInformation.jsx';
-
-// Import the dialog components
 import BanUserDialog from '@/components/dialog/BanUserDialog';
 import UnbanUserDialog from '@/components/dialog/UnbanUserDialog';
+import { getUserById, changeUserStatus } from '@/services/users/usersApi';
+import { PageSkeleton } from '@/components/common/PageSkeleton.jsx';
+
+// ✅ Use react-toastify
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function UserDetails() {
-    // State to manage the user's status and the dialogs
-    const [user, setUser] = useState({
-        id: 'USR-12345',
-        name: 'أحمد محمد',
-        imageUrl: null,
-        rating: 4.5,
-        nationality: 'سوري',
-        dob: '15/05/1990',
-        gender: 'ذكر',
-        email: 'ahmed.mohamed@example.com',
-        phone: '+963 123 456 789',
-        status: 'نشط',
-        joinDate: '2023-01-15',
-        banDuration: '5 أيام' // Example ban duration from API
-    });
+    const { id } = useParams();
+    const queryClient = useQueryClient();
     const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
     const [isUnbanDialogOpen, setIsUnbanDialogOpen] = useState(false);
 
-    // Determine if user is banned based on status
-    const isBanned = user.status !== 'نشط';
+    // Fetch user data
+    const { data: user, isLoading, isError, error } = useQuery({
+        queryKey: ['user', id],
+        queryFn: () => getUserById(id),
+        enabled: !!id,
+    });
 
-    const userStats = {
-        bookedTrips: 12,
-        bookedEvents: 8,
-        posts: 42
+    // Function to fetch user data (for the dialog)
+    const fetchUserData = async (userId) => {
+        try {
+            const userData = await getUserById(userId);
+            return userData;
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            throw error;
+        }
     };
 
-    const userPreferences = {
-        season: 'الربيع والخريف',
-        tripType: 'رحلات ثقافية وتاريخية',
-        duration: 'من 3 إلى 7 أيام',
-        provinces: 'دمشق، حلب، اللاذقية'
-    };
+    // Change user status mutation
+    const changeStatusMutation = useMutation({
+        mutationFn: (statusData) => changeUserStatus(statusData),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries(['user', id]);
+            setIsBanDialogOpen(false);
+            setIsUnbanDialogOpen(false);
+
+            if (variables.status === 'unblock') {
+                toast.success('تم رفع الحظر عن المستخدم بنجاح ✅');
+            } else if (variables.status === 'block') {
+                toast.success('تم حظر المستخدم بنجاح 🚫');
+            }
+        },
+        onError: (error) => {
+            console.error('Error changing user status:', error);
+            toast.error('حدث خطأ أثناء تغيير حالة المستخدم ❌');
+        }
+    });
+
+    const isBanned = user?.account_status && user.account_status !== 'نشط';
+
+    const transformedUser = user ? {
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`,
+        imageUrl: user.photo,
+        nationality: user.country,
+        dob: user.date_of_birth,
+        gender: user.gender === 'female' ? 'أنثى' : 'ذكر',
+        email: user.email,
+        phone: ` ${user.phone} ${user.country_code.slice(1)}+`,
+        status: user.account_status || 'نشط',
+    } : null;
+
+    const userStats = user ? {
+        bookedTrips: user.reserved_trips,
+        bookedEvents: user.reserved_events,
+        posts: user.number_of_post
+    } : null;
+
+    const userPreferences = user?.preference ? {
+        season: user.preference.preferred_season?.join('، ') || 'غير محدد',
+        tripType: user.preference.preferred_activities?.join('، ') || 'غير محدد',
+        duration: user.preference.duration
+            ? `${user.preference.duration.min_days} - ${user.preference.duration.max_days} أيام`
+            : 'غير محدد',
+        provinces: user.preference.cities?.join('، ') || 'غير محدد'
+    } : null;
 
     const handleStatusChangeClick = () => {
         if (isBanned) {
@@ -52,73 +95,97 @@ export default function UserDetails() {
         }
     };
 
-    // Callback function to handle banning the user
     const handleBan = (reason, duration, isPermanent) => {
-        // Here you would call your API to ban the user
-        console.log(`Banning user ${user.name} for ${duration} with reason: ${reason}`);
-
-        // Determine the status based on whether it's permanent or temporary
-        const newStatus = isPermanent ? 'حظر نهائي' : 'حظر مؤقت';
-
-        // After successful API call, update local state
-        setUser({
-            ...user,
-            status: newStatus,
-            banDuration: isPermanent ? null : duration
-        });
-
-        // Close the dialog
-        setIsBanDialogOpen(false);
+        const statusData = {
+            user_id: id,
+            status: 'block',
+            duration: isPermanent ? 'always' : duration,
+            reason: reason
+        };
+        changeStatusMutation.mutate(statusData);
     };
 
-    // Callback function to handle unbanning the user
     const handleUnban = () => {
-        // Here you would call your API to unban the user
-        console.log(`Unbanning user ${user.name}`);
-        // After successful API call, update local state
-        setUser({ ...user, status: 'نشط', banDuration: null });
-        // Close the dialog
-        setIsUnbanDialogOpen(false);
+        const statusData = {
+            user_id: id,
+            status: 'unblock'
+        };
+        changeStatusMutation.mutate(statusData);
     };
+
+    if (isLoading) {
+        return <PageSkeleton rows={6} />;
+    }
+
+    if (isError) {
+        return (
+            <div className="container mx-auto p-6">
+                <div className="text-red-500 text-center">
+                    Error loading user: {error.message}
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="container mx-auto p-6">
+                <div className="text-center">
+                    User not found
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto space-y-6" dir="rtl">
             <HeaderInfoCard
-                title={user.name}
+                title={transformedUser.name}
                 entityType="user"
-                imageUrl={user.imageUrl}
-                rating={user.rating}
-                date={user.joinDate}
-                status={user.status}
+                imageUrl={transformedUser.imageUrl}
+                rating={transformedUser.rating}
+                date={transformedUser.joinDate}
+                status={transformedUser.status}
                 onStatusChangeClick={handleStatusChangeClick}
+                isActionLoading={changeStatusMutation.isPending}
             />
 
             <h2 className="text-h1-bold-24 text-gray-800 mb-6">المعلومات الشخصية</h2>
-            <PersonalInformation user={user} />
+            <PersonalInformation user={transformedUser} />
+
             <h2 className="text-h1-bold-24 text-gray-800 mb-6">التفضيلات</h2>
-            <Preferences prefs={userPreferences} />
+            <Preferences prefs={userPreferences || ""} />
+
             <h2 className="text-h1-bold-24 text-gray-800 mb-6">المعلومات الثانوية</h2>
             <SecondaryInformation stats={userStats} />
 
-            {/* Conditionally render the Ban dialog */}
+            {/* Ban Dialog */}
             {isBanDialogOpen && (
                 <BanUserDialog
-                    userName={user.name}
+                    userName={transformedUser.name}
                     onBan={handleBan}
                     onClose={() => setIsBanDialogOpen(false)}
+                    isLoading={changeStatusMutation.isPending}
                 />
             )}
 
-            {/* Conditionally render the Unban dialog */}
+            {/* Unban Dialog */}
             {isUnbanDialogOpen && (
                 <UnbanUserDialog
-                    userName={user.name}
-                    // This prop would come from your API
-                    banDuration={user.banDuration}
+                    userName={transformedUser.name}
+                    userId={id}
                     onUnban={handleUnban}
                     onClose={() => setIsUnbanDialogOpen(false)}
+                    isLoading={changeStatusMutation.isPending}
+                    onBanExpired={() => {
+                        queryClient.invalidateQueries(['user', id]);
+                    }}
+                    fetchUserData={fetchUserData}
                 />
             )}
+
+            {/* ✅ Toast container */}
+            <ToastContainer position="top-left" autoClose={3000} />
         </div>
     );
 }

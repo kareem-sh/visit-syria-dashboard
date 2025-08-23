@@ -40,14 +40,14 @@ export default function RequestsList({ requests, selectedRequest, onSelectReques
                                     <div className={`rounded-full mr-4 ml-2 ${isSelected ? 'bg-white/20' : 'bg-gray-200'}`}>
                                         <img
                                             src={request.image ?? CompanyProfile}
-                                            alt={request.company_name}
+                                            alt={request.name_of_company}
                                             className={`w-16 h-16 rounded-full`}
                                         />
                                     </div>
                                     <div>
-                                        <p className="font-semibold">{request.name}</p>
+                                        <p className="font-semibold">{request.name_of_company}</p>
                                         <p className={`text-xs mt-1 ${isSelected ? 'text-green-100' : 'text-gray-500'}`}>
-                                            {request.date}
+                                            {request.founding_date}
                                         </p>
                                     </div>
                                 </div>

@@ -35,11 +35,11 @@ const CommentsSection = ({ comments = [], status = null ,showRatings =true}) => 
                                     className="w-11 h-11 rounded-full object-cover"
                                 />
                                 <div className="mt-2">
-                                    <h4 className="text-body-bold-16">{comment.author}</h4>
-                                    <span className="text-body-regular-caption-12  text-grey-600">{comment.date}</span>
+                                    <h4 className="text-body-bold-16">{comment.user_name}</h4>
+                                    <span className="text-body-regular-caption-12  text-grey-600">{comment.created_at}</span>
                                 </div>
                             </div>
-                            <p className="text-body-regular-16-auto mt-3 text-(--text-paragraph)">{comment.text}</p>
+                            <p className="text-body-regular-16-auto mt-3 text-(--text-paragraph)">{comment.body}</p>
                         </div>
                         {showRatings && (
                         <div className="flex items-center text-yellow-500 text-sm gap-1 min-w-[60px]">

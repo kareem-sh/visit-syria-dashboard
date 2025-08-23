@@ -1,38 +1,35 @@
+// EventDetails.jsx
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import EventImageGallery from "@/components/common/EventImageGallery.jsx";
 import Map from "@/components/common/Map.jsx";
 import EventInfoCard from "@/components/common/EventInfoCard.jsx";
 import Bookings from "@/components/common/Booking.jsx";
 import EventEditDialog from "@/components/Dialog/EventEditDialog.jsx";
+import GoldCircularProgress from "@/components/common/GoldCircularProgress.jsx"; // ✅ Import the spinner
 
-import { eventBookings, getEventById, updateEvent } from "@/services/events/eventsApi.js";
+import { eventBookings, updateEvent } from "@/services/events/eventsApi.js";
+import { useEvent } from "@/hooks/useEvent";
 
 function EventDetails() {
     const { id } = useParams();
     const numericId = Number(id);
-
-    const {
-        data: bookings = [],
-        isLoading: bookingsLoading,
-        refetch: refetchBookings,
-    } = useQuery({
-        queryKey: ["eventBookings", numericId],
-        queryFn: () => eventBookings(numericId),
-        enabled: !!numericId,
-        refetchOnWindowFocus: false,
-    });
+    const queryClient = useQueryClient();
 
     const {
         data: apiEvent,
         isLoading: eventLoading,
         error: eventError,
-        refetch: refetchEvent,
+    } = useEvent(numericId);
+
+    const {
+        data: bookings = [],
+        isLoading: bookingsLoading,
     } = useQuery({
-        queryKey: ["event", numericId],
-        queryFn: () => getEventById(numericId),
+        queryKey: ["eventBookings", numericId],
+        queryFn: () => eventBookings(numericId),
         enabled: !!numericId,
         refetchOnWindowFocus: false,
     });
@@ -43,11 +40,20 @@ function EventDetails() {
     } = useMutation({
         mutationFn: (data) => updateEvent(numericId, data),
         onSuccess: () => {
-            refetchEvent();
-            refetchBookings();
+            // ✅ Invalidate queries to trigger refetch
+            queryClient.invalidateQueries({ queryKey: ['event', numericId] });
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            queryClient.invalidateQueries({ queryKey: ['eventBookings', numericId] });
+
+            // Close the dialog
+            setEditOpen(false);
+        },
+        onError: (error) => {
+            console.error("Update error:", error);
         }
     });
 
+    // Transform API data to component format
     const event = apiEvent
         ? {
             id: apiEvent.id,
@@ -61,16 +67,16 @@ function EventDetails() {
             mainImage: apiEvent.media?.[0] || null,
             secondaryImages: apiEvent.media?.length > 1 ? apiEvent.media.slice(1) : [],
             locationName: apiEvent.place || "",
-            refNumber: apiEvent.id ?? "",
+            refNumber: apiEvent.id?.toString() || "",
             duration: apiEvent.duration_days ?? 0,
             duration_hours: apiEvent.duration_hours ?? 0,
             date: apiEvent.date ? new Date(apiEvent.date).toLocaleDateString("en-GB") : "",
             status: apiEvent.status || "",
-            tickets: apiEvent.tickets,
-            price: apiEvent.price,
-            event_type: apiEvent.event_type ?? "",
-            price_type: apiEvent.price_type ?? "",
-            pre_booking: apiEvent.pre_booking ?? false,
+            tickets: apiEvent.tickets || 0,
+            price: apiEvent.price || 0,
+            event_type: apiEvent.event_type || "",
+            price_type: apiEvent.price_type || "",
+            pre_booking: apiEvent.pre_booking || false,
         }
         : null;
 
@@ -83,8 +89,8 @@ function EventDetails() {
             name: event.name,
             description: event.description,
             place: event.locationName,
-            latitude: event.position?.[0],
-            longitude: event.position?.[1],
+            latitude: event.position?.[0] || event.latitude,
+            longitude: event.position?.[1] || event.longitude,
             images: [
                 ...(event.mainImage ? [{ url: event.mainImage }] : []),
                 ...(event.secondaryImages?.map(url => ({ url })) || [])
@@ -94,13 +100,30 @@ function EventDetails() {
     };
 
     const handleSave = async (payload) => {
-        await mutateUpdateEvent(payload);
-        setEditOpen(false);
+        try {
+            await mutateUpdateEvent(payload);
+        } catch (error) {
+            console.error("Save error:", error);
+        }
     };
 
-    if (eventLoading) return <div>Loading...</div>;
-    if (eventError) return <div>Error loading event.</div>;
-    if (!event) return <div>Not found.</div>;
+    if (eventLoading) return <div className="p-4 text-center">Loading event details...</div>;
+    if (eventError) {
+        console.error("Event error details:", eventError);
+        return (
+            <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                <h2 className="font-bold">Error loading event</h2>
+                <p>{eventError.message || "Please check your connection and try again."}</p>
+                <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['event', numericId] })}
+                    className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+    if (!event) return <div className="p-4 text-center">Event not found.</div>;
 
     return (
         <div className="flex flex-col gap-6 w-full" dir="ltr">
@@ -142,14 +165,24 @@ function EventDetails() {
                     onEdit={openEditDialog}
                 />
             </div>
+
+            {/* ✅ Updated Bookings Section with Emerald Spinner */}
             <div className="w-full" dir="rtl">
-                <Bookings data={bookings} />
+                {bookingsLoading ? (
+                    <div className="flex justify-center items-center p-8">
+                        <GoldCircularProgress color="#10b981" /> {/* Emerald color for bookings */}
+                    </div>
+                ) : (
+                    <Bookings data={bookings} />
+                )}
             </div>
+
             <EventEditDialog
                 isOpen={editOpen}
                 onClose={() => setEditOpen(false)}
                 initialData={editData}
                 onSave={handleSave}
+                loading={updating}
             />
         </div>
     );

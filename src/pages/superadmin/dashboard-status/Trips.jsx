@@ -1,99 +1,19 @@
-import React, { useState, useCallback } from "react";
+// components/Trips.jsx
+import React, { useState, useCallback, useMemo } from "react";
+import { useQuery } from '@tanstack/react-query';
 import Table from "@/components/common/CommonTable";
-import SortFilterButton from "@/components/common/SortFilterButton"; // updated import
+import SortFilterButton from "@/components/common/SortFilterButton";
+import { getTrips } from "@/services/trips/trips";
 
 const columns = [
   { header: "الرقم التعريفي", accessor: "id" },
-  { header: "اسم الرحلة", accessor: "tripName" },
-  { header: "اسم الشركة", accessor: "company" },
-  { header: "التاريخ", accessor: "date" },
-  { header: "المدة", accessor: "duration" },
-  { header: "عدد التذاكر", accessor: "tickets_count" },
-  { header: "سعر التذكرة", accessor: "ticket_price" },
+  { header: "اسم الرحلة", accessor: "name" },
+  { header: "اسم الشركة", accessor: "companyName" },
+  { header: "التاريخ", accessor: "start_date" },
+  { header: "المدة", accessor: "days" },
+  { header: "عدد التذاكر", accessor: "tickets" },
+  { header: "سعر التذكرة", accessor: "price" },
   { header: "الحالة", accessor: "status" },
-];
-
-const rawData = [
-  {
-    id: "5765",
-    tripName: "رحلة في جبلة",
-    company: "التعاون",
-    date: "25/06/2025",
-    duration: "3 أيام",
-    tickets_count: 55,
-    ticket_price: "100$",
-    status: "لم تبدأ بعد",
-  },
-  {
-    id: "5766",
-    tripName: "رحلة غروب الشمس",
-    company: "الشام",
-    date: "26/06/2025",
-    duration: "1 يوم",
-    tickets_count: 40,
-    ticket_price: "80$",
-    status: "جارية حالياً",
-  },
-  {
-    id: "3405834",
-    tripName: "رحلة سوريا السياحية",
-    company: "النورس",
-    date: "31/08/2025",
-    duration: "3 أيام",
-    tickets_count: 55,
-    ticket_price: "100$",
-    status: "منتهية",
-  },
-  {
-    id: "54983",
-    tripName: "جولة في الشرق",
-    company: "الصفاء",
-    date: "20/10/2025",
-    duration: "3 أيام",
-    tickets_count: 55,
-    ticket_price: "100$",
-    status: "جارية حالياً",
-  },
-  {
-    id: "349834",
-    tripName: "رحلة إلى آثار تدمر",
-    company: "زهور الشام",
-    date: "04/09/2025",
-    duration: "3 أيام",
-    tickets_count: 55,
-    ticket_price: "100$",
-    status: "تم الإلغاء",
-  },
-  {
-    id: "349835",
-    tripName: "رحلة إلى دمشق القديمة",
-    company: "زهور الشام",
-    date: "05/09/2025",
-    duration: "3 أيام",
-    tickets_count: 55,
-    ticket_price: "100$",
-    status: "لم تبدأ بعد",
-  },
-  {
-    id: "349836",
-    tripName: "رحلة إلى حلب",
-    company: "زهور الشام",
-    date: "06/09/2025",
-    duration: "3 أيام",
-    tickets_count: 55,
-    ticket_price: "100$",
-    status: "جارية حالياً",
-  },
-  {
-    id: "349837",
-    tripName: "رحلة وادي بردى",
-    company: "السفاري",
-    date: "15/09/2025",
-    duration: "2 أيام",
-    tickets_count: 30,
-    ticket_price: "120$",
-    status: "منتهية",
-  },
 ];
 
 const filterOptions = [
@@ -106,28 +26,94 @@ const filterOptions = [
   { label: "حسب الحالة (لم تبدأ بعد)", value: "لم تبدأ بعد" },
 ];
 
+// Fixed categories as you provided
+const displayCategories = [
+  "الكل",
+  "تاريخية",
+  "ثقافية",
+  "ترفيهية",
+  "دينية",
+  "طبيعية",
+  "أثرية",
+  "طعام",
+  "عادات وتقاليد"
+];
+
+// Category tag component
+const CategoryTag = ({ category, isSelected = false, onClick }) => {
+  return (
+      <button
+          onClick={() => onClick(category)}
+          className={`px-3 py-1.5 rounded-full text-body-bold-14 transition-colors cursor-pointer min-w-[100px] text-center ${
+              isSelected
+                  ? "bg-green text-white"
+                  : "border border-green text-green hover:bg-green hover:text-white"
+          }`}
+      >
+        {category}
+      </button>
+  );
+};
+
 const Trips = () => {
-  const [filteredData, setFilteredData] = useState(rawData);
+  const { data: tripsData, isLoading, error } = useQuery({
+    queryKey: ['trips'],
+    queryFn: getTrips,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [currentFilter, setCurrentFilter] = useState("الكل");
+  const [selectedCategory, setSelectedCategory] = useState("الكل");
 
   const handleFilterChange = useCallback((filterValue) => {
     setCurrentFilter(filterValue);
+  }, []);
 
-    let newData = [...rawData];
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+  };
 
-    switch (filterValue) {
+  // Prepare data for table
+  const tableData = useMemo(() => {
+    if (!tripsData?.trips) return [];
+
+    return tripsData.trips.map(trip => ({
+      id: trip.id,
+      name: trip.name,
+      companyName: trip.company?.name || "غير محدد",
+      start_date: trip.start_date,
+      days: trip.days,
+      tickets: trip.tickets,
+      price: trip.price,
+      status: trip.status,
+      categories: trip.tags || []
+    }));
+  }, [tripsData]);
+
+  const filteredData = useMemo(() => {
+    let newData = [...tableData];
+
+    // Apply category filter based on fixed categories
+    if (selectedCategory !== "الكل") {
+      newData = newData.filter(trip =>
+          trip.categories && trip.categories.includes(selectedCategory)
+      );
+    }
+
+    // Apply status and date filters
+    switch (currentFilter) {
       case "latest":
         newData.sort((a, b) => {
-          const dateA = new Date(a.date.split("/").reverse().join("-"));
-          const dateB = new Date(b.date.split("/").reverse().join("-"));
+          const dateA = new Date(a.start_date);
+          const dateB = new Date(b.start_date);
           return dateB - dateA;
         });
         break;
 
       case "oldest":
         newData.sort((a, b) => {
-          const dateA = new Date(a.date.split("/").reverse().join("-"));
-          const dateB = new Date(b.date.split("/").reverse().join("-"));
+          const dateA = new Date(a.start_date);
+          const dateB = new Date(b.start_date);
           return dateA - dateB;
         });
         break;
@@ -136,45 +122,88 @@ const Trips = () => {
       case "تم الإلغاء":
       case "جارية حالياً":
       case "لم تبدأ بعد":
-        newData = newData.filter((item) => item.status === filterValue);
+        newData = newData.filter((item) => item.status === currentFilter);
         break;
 
       default:
-        newData = rawData;
+        // "الكل" - no additional filtering needed
+        break;
     }
 
-    setFilteredData(newData);
-  }, []);
+    return newData;
+  }, [currentFilter, selectedCategory, tableData]);
+
+  if (isLoading) {
+    return (
+        <div className="w-full p-0 m-0" dir="rtl">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green"></div>
+          </div>
+        </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="w-full p-0 m-0" dir="rtl">
+          <div className="text-red-500 text-center py-8">
+            خطأ في تحميل البيانات: {error.message}
+          </div>
+        </div>
+    );
+  }
 
   return (
-    <div className="w-full p-0 m-0">
-      {/* Title & Filter Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 px-2">
-        <h1 className="text-h1-bold-24 text-gray-800">الرحلات</h1>
+      <div className="w-full p-0 m-0" dir="rtl">
+        {/* Title & Filter Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 px-2">
+          <h1 className="text-h1-bold-24 text-gray-800">الرحلات</h1>
+        </div>
 
-        <SortFilterButton
-          options={filterOptions.map((opt) => opt.label)}
-          selectedValue={currentFilter}
-          position="left"
-          onChange={(label) => {
-            const matched = filterOptions.find((f) => f.label === label);
-            if (matched) handleFilterChange(matched.value);
-          }}
+        {/* Category Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 px-2">
+          <div className="flex flex-wrap gap-3 ">
+            {displayCategories.map((category) => (
+                <CategoryTag
+                    key={category}
+                    category={category}
+                    isSelected={selectedCategory === category}
+                    onClick={handleCategoryChange}
+                />
+            ))}
+          </div>
+          <div>
+            <SortFilterButton
+                options={filterOptions.map((opt) => opt.label)}
+                selectedValue={filterOptions.find(opt => opt.value === currentFilter)?.label || "الكل"}
+                position="left"
+                onChange={(label) => {
+                  const matched = filterOptions.find((f) => f.label === label);
+                  if (matched) handleFilterChange(matched.value);
+                }}
+            />
+          </div>
+        </div>
+
+        {/* Table */}
+        <Table
+            columns={columns}
+            data={filteredData}
+            currentFilter={currentFilter}
+            onFilterChange={handleFilterChange}
+            showFilter={false}
+            showHeader={false}
+            showSeeAll={false}
+            basePath={'trips'}
         />
-      </div>
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        data={filteredData}
-        currentFilter={currentFilter}
-        onFilterChange={handleFilterChange}
-        showFilter={false}
-        showHeader={false}
-        showSeeAll={false}
-        basePath={'trips'}
-      />
-    </div>
+        {/* Show message if no results */}
+        {filteredData.length === 0 && tableData.length > 0 && (
+            <div className="text-center py-8 text-gray-500">
+              لا توجد رحلات تطابق الفلتر المحدد
+            </div>
+        )}
+      </div>
   );
 };
 

@@ -1,21 +1,44 @@
 // pages/Companies.jsx
 import React, { useState, useCallback, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import RequestsList from "@/components/common/RequestsList";
 import AddCompanyInstructions from "@/components/panels/AddCompanyInstructions";
 import CompanyDialog from "@/components/dialog/CompanyDialog";
 import Chart from "@/components/common/Chart.jsx";
 import CommonTable from "@/components/common/CommonTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { companiesData, sampleRequests } from "@/data/companies.js";
+import { createCompanyByAdmin, getCompaniesOnHold } from "@/services/companies/companiesApi";
 
 export default function Companies() {
+    const queryClient = useQueryClient();
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const [isViewDialogOpen, setViewDialogOpen] = useState(false);
     const [selectedStat, setSelectedStat] = useState("trips");
     const [currentFilter, setCurrentFilter] = useState("الكل");
+
+    // Query for fetching companies on hold
+    const { data: companiesOnHold = [], isLoading: isLoadingRequests, refetch: refetchCompanies } = useQuery({
+        queryKey: ['companiesOnHold'],
+        queryFn: getCompaniesOnHold,
+    });
+
+    // Mutation for creating a company
+    const createCompanyMutation = useMutation({
+        mutationFn: createCompanyByAdmin,
+        onSuccess: () => {
+            // Invalidate and refetch companies queries
+            queryClient.invalidateQueries(['companies']);
+            refetchCompanies();
+            toast.success("تم إنشاء الشركة بنجاح");
+            setCreateDialogOpen(false);
+        },
+        onError: (error) => {
+            toast.error("فشل في إنشاء الشركة: " + (error.response?.data?.message || error.message));
+        }
+    });
 
     const handleSelectRequest = (request) => {
         setSelectedRequest(request);
@@ -29,17 +52,22 @@ export default function Companies() {
 
     const handleAccept = (data) => {
         console.log("Accepted:", data);
+        // Here you would typically call an API to approve the company
+        toast.success("تم قبول الشركة بنجاح");
         handleCloseViewDialog();
+        refetchCompanies(); // Refresh the list after approval
     };
 
     const handleDecline = (data) => {
         console.log("Declined:", data);
+        // Here you would typically call an API to reject the company
+        toast.success("تم رفض الشركة بنجاح");
         handleCloseViewDialog();
+        refetchCompanies(); // Refresh the list after rejection
     };
 
     const handleAddCompany = (newCompany) => {
-        console.log("New Company Added via Dialog:", newCompany);
-        setCreateDialogOpen(false);
+        createCompanyMutation.mutate(newCompany);
     };
 
     const handleStatChange = (value) => {
@@ -139,7 +167,10 @@ export default function Companies() {
                 {/* Main Panel (Left Side) */}
                 <div className="lg:col-span-2">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4 pr-2">إضافة شركة</h2>
-                    <AddCompanyInstructions onAddClick={() => setCreateDialogOpen(true)} />
+                    <AddCompanyInstructions
+                        onAddClick={() => setCreateDialogOpen(true)}
+                        isLoading={createCompanyMutation.isPending}
+                    />
                 </div>
 
                 {/* Sidebar with Requests List (Right Side) */}
@@ -147,10 +178,15 @@ export default function Companies() {
                     {/* Title added here, outside the component card */}
                     <h2 className="text-2xl font-bold text-gray-800 mb-4 pr-2">قائمة الطلبات</h2>
                     <RequestsList
-                        requests={sampleRequests}
+                        requests={companiesOnHold}
                         selectedRequest={selectedRequest}
                         onSelectRequest={handleSelectRequest}
                     />
+                    {isLoadingRequests && (
+                        <div className="text-center py-4">
+                            <p className="text-gray-500">جاري تحميل الطلبات...</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -235,6 +271,7 @@ export default function Companies() {
                 onClose={() => setCreateDialogOpen(false)}
                 mode="create"
                 onAdd={handleAddCompany}
+                isLoading={createCompanyMutation.isPending}
             />
             {selectedRequest && (
                 <CompanyDialog

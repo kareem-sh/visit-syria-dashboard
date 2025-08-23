@@ -1,6 +1,5 @@
 import apiClient from "../apiClient.js";
 
-// Get all events
 export const getEvents = async () => {
     const res = await apiClient.get("/admin/events");
 
@@ -11,9 +10,27 @@ export const getEvents = async () => {
     }
 
     return eventsArray.map((event) => ({
+        // Full event data for caching
         id: event.id,
+        name: event.name,
+        description: event.description,
+        longitude: event.longitude,
+        latitude: event.latitude,
+        place: event.place,
+        date: event.date,
+        duration_days: event.duration_days,
+        duration_hours: event.duration_hours,
+        tickets: event.tickets,
+        price: event.price,
+        event_type: event.event_type,
+        price_type: event.price_type,
+        pre_booking: event.pre_booking,
+        status: event.status,
+        media: event.media || [],
+
+        // Formatted fields for display in table
         eventName: event.name,
-        date: event.date ? new Date(event.date).toLocaleDateString("en-GB") : "-",
+        formattedDate: event.date ? new Date(event.date).toLocaleDateString("en-GB") : "-",
         duration: `${event.duration_days || 0} أيام`,
         location: event.place
             ? event.place.length > 30
@@ -22,10 +39,8 @@ export const getEvents = async () => {
             : "-",
         tickets_count: event.tickets || 0,
         ticket_price: event.price_type === "free" ? "مجاني" : `${event.price} $`,
-        status: event.status,
     }));
 };
-
 // Create a new event
 export const createEvent = async (formData) => {
     try {

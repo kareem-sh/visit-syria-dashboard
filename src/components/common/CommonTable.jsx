@@ -88,52 +88,41 @@ const CommonTable = ({
         const name = row[accessor];
         const imageUrl = row.image || row.avatar || row.profileImage;
 
-        // Determine the appropriate fallback image based on entityType
         const fallbackImage = entityType === "company" ? CompanyProfile : UserProfile;
 
-        // If we have a specific image URL, use it
         if (imageUrl) {
             return (
                 <img
                     src={imageUrl}
                     alt={name}
                     className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
-                    onError={(e) => {
-                        e.target.src = fallbackImage;
-                    }}
+                    onError={(e) => { e.target.src = fallbackImage; }}
                 />
             );
         }
 
-        // For companies, use dicebear with company name
         if (entityType === "company") {
             return (
                 <img
                     src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&size=32`}
                     alt={name}
                     className="w-6 h-6 rounded-full flex-shrink-0"
-                    onError={(e) => {
-                        e.target.src = CompanyProfile;
-                    }}
+                    onError={(e) => { e.target.src = CompanyProfile; }}
                 />
             );
         }
 
-        // For users, use dicebear with user name
         if (entityType === "user") {
             return (
                 <img
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&size=32`}
                     alt={name}
                     className="w-6 h-6 rounded-full flex-shrink-0"
-                    onError={(e) => {
-                        e.target.src = UserProfile;
-                    }}
+                    onError={(e) => { e.target.src = UserProfile; }}
                 />
             );
         }
 
-        // Fallback to appropriate image based on entityType
         return (
             <img
                 src={fallbackImage}
@@ -168,25 +157,45 @@ const CommonTable = ({
                         style={gridStyle}
                         onClick={() => handleRowClick(row)}
                     >
-                        {columns.map((col, colIndex) => (
-                            <div
-                                key={colIndex}
-                                className="flex items-center justify-center gap-2 truncate text-center"
-                            >
-                                {col.accessor === "company" || col.accessor === "name" ? (
-                                    <div className="flex items-center gap-2">
-                                        {renderAvatar(row, col.accessor)}
-                                        <span>{row[col.accessor]}</span>
-                                    </div>
-                                ) : col.accessor === "status" ? (
-                                    renderStatusBadge(row[col.accessor])
-                                ) : col.render ? (
-                                    col.render(row[col.accessor], row)
-                                ) : (
-                                    row[col.accessor]
-                                )}
-                            </div>
-                        ))}
+                        {columns.map((col, colIndex) => {
+                            const value = row[col.accessor];
+                            const isNameCol = col.accessor === "company" || col.accessor === "name";
+                            const isStatusCol = col.accessor === "status";
+
+                            return (
+                                <div
+                                    key={colIndex}
+                                    className={`flex items-center gap-2 w-full ${
+                                        isNameCol
+                                            ? value.length > 15
+                                                ? "justify-start"
+                                                : "justify-center"
+                                            : "justify-center"
+                                    }`}
+                                >
+                                    {isNameCol ? (
+                                        <>
+                                            {renderAvatar(row, col.accessor)}
+                                            <span
+                                                className="truncate"
+                                                style={{
+                                                    maxWidth: "140px",
+                                                }}
+                                                title={value}
+                                            >
+                                                {value}
+                                            </span>
+                                        </>
+                                    ) : isStatusCol ? (
+                                        renderStatusBadge(value)
+                                    ) : col.render ? (
+                                        col.render(value, row)
+                                    ) : (
+                                        value
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 ))}
             </div>

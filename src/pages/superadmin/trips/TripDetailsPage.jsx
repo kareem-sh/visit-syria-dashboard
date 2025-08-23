@@ -1,21 +1,39 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import ImageSection from "@/components/common/ImageSection";
 import CommentsSection from "@/components/common/CommentsSection";
 import TripInfoCard from "@/components/common/TripInfoCard.jsx";
 import DayDetails from "@/components/common/DayDetails";
-import { getDataByType } from "@/data/index.js";
+import { useTrip } from "@/hooks/useTrip"; // Import the custom hook
+
+// Lazy load the TripMap component
+const TripMap = React.lazy(() => import("@/components/common/TripMap"));
 
 const TripDetailsPage = ({ type = "event" }) => {
     const { id } = useParams();
-    const data = getDataByType(type) || [];
-    const item = data.find((el) => String(el.id) === String(id));
-
     const imageRef = useRef(null);
     const [imageHeight, setImageHeight] = useState(0);
 
+    // Use the custom hook
+    const { data: tripData, isLoading, error } = useTrip(id);
+
+    // Mock trip path data for testing (Damascus to Aleppo)
+    const mockTripPath = {
+        markers: [
+            { lat: 33.5138, lng: 36.2765, title: "ساحة الأمويين" }, // Umayyad Square
+            { lat: 33.5074, lng: 36.2988, title: "جامعة دمشق" }   // Damascus University
+        ],
+        route: [
+            { lat: 33.5138, lng: 36.2765 }, // start - Umayyad Square
+            { lat: 33.5125, lng: 36.2820 }, // Shukri al-Quwatli Street
+            { lat: 33.5109, lng: 36.2885 }, // Near Victoria Bridge
+            { lat: 33.5090, lng: 36.2930 }, // Baramkeh area
+            { lat: 33.5074, lng: 36.2988 }  // end - Damascus University
+        ]
+    };
+
     useEffect(() => {
-        if (!item || !item.images) return;
+        if (!tripData || !tripData.images) return;
         const measure = () => {
             if (imageRef.current) {
                 setImageHeight(imageRef.current.clientHeight);
@@ -24,18 +42,34 @@ const TripDetailsPage = ({ type = "event" }) => {
         measure();
         window.addEventListener("resize", measure);
         return () => window.removeEventListener("resize", measure);
-    }, [item?.images]);
+    }, [tripData?.images]);
 
-    if (!item) {
+    if (isLoading) {
         return (
-            <div className="text-center p-10 text-red-500">
-                العنصر غير موجود أو تم حذفه.
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green"></div>
             </div>
         );
     }
 
-    const mainImage = item.images?.[0];
-    const secondaryImages = item.images?.slice(1) || [];
+    if (error) {
+        return (
+            <div className="text-center p-10 text-red-500">
+                خطأ في تحميل البيانات: {error.message}
+            </div>
+        );
+    }
+
+    if (!tripData) {
+        return (
+            <div className="text-center p-10 text-red-500">
+                الرحلة غير موجودة أو تم حذفها.
+            </div>
+        );
+    }
+
+    const mainImage = tripData.images?.[0];
+    const secondaryImages = tripData.images?.slice(1) || [];
 
     return (
         <div className="w-full flex justify-center">
@@ -57,40 +91,58 @@ const TripDetailsPage = ({ type = "event" }) => {
                         style={{ height: imageHeight, overflowY: "auto" }}
                     >
                         <h3 className="text-h1-bold-22 mb-2">التقييمات و التعليقات</h3>
-                        <CommentsSection comments={item.comments || []} status={item.status} />
+                        <CommentsSection comments={tripData.comments || []} status={tripData.status} />
                     </div>
                 </div>
 
-                {/* Product Info Card */}
-                <div className="flex flex-col lg:flex-row gap-4 w-full">
+                {/* Product Info Card and Day Details */}
+                <div className="flex flex-col lg:flex-row gap-4 w-full items-stretch">
                     {/* Product Info Card */}
-                    <div className="lg:w-[60%] w-full">
+                    <div className="lg:w-[60%] w-full flex">
                         <TripInfoCard
-                            title={item.tripName}
-                            price={item.price}
-                            capacity={item.capacity}
-                            discount={item.discount}
-                            refNumber={item.refNumber}
-                            rating={item.rating}
-                            tags={item.tags}
-                            description={item.description}
-                            company={item.company}
-                            season={item.season}
-                            duration={item.duration}
-                            date={item.date}
-                            status={item.status}
+                            title={tripData.name}
+                            price={tripData.price}
+                            capacity={tripData.tickets}
+                            discount={tripData.discount}
+                            refNumber={tripData.id}
+                            rating={tripData.company?.rating}
+                            tags={tripData.tags}
+                            description={tripData.description}
+                            company={tripData.company}
+                            season={tripData.season}
+                            duration={tripData.days}
+                            date={tripData.start_date}
+                            status={tripData.status}
                         />
                     </div>
 
                     {/* Day Details */}
-                    {item.days && item.days.length > 0 && (
-                        <div className="flex-1 w-full">
+                    {tripData.timelines && tripData.timelines.length > 0 && (
+                        <div className="flex-1 w-full flex flex-col">
                             <h3 className="text-h1-bold-22 mb-2">جدول الرحلات</h3>
-                            <DayDetails days={item.days} />
+                            <DayDetails days={tripData.timelines} />
                         </div>
                     )}
                 </div>
 
+                {/* Trip Map Section */}
+                <div className="w-full">
+                    <h3 className="text-h1-bold-22 mb-4">خريطة الرحلة</h3>
+                    <Suspense fallback={
+                        <div className="flex justify-center items-center h-96 bg-gray-100 rounded-xl">
+                            <div className="flex flex-col items-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mb-2"></div>
+                                <p className="text-gray-600">جاري تحميل الخريطة...</p>
+                            </div>
+                        </div>
+                    }>
+                        <TripMap
+                            tripPath={tripData.trip_path || mockTripPath}
+                            width="100%"
+                            height="500px"
+                        />
+                    </Suspense>
+                </div>
             </div>
         </div>
     );

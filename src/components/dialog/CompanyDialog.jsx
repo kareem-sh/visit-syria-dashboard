@@ -1,3 +1,4 @@
+// components/dialog/CompanyDialog.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import PhoneInput from "react-phone-input-2";
 import "@/components/dialog/PlaceForm.css";
@@ -10,6 +11,7 @@ import CompanyProfile from "@/assets/images/Company Profile.svg";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import Decline from "@/assets/icons/common/decline.svg";
 import Approve from "@/assets/icons/common/approve.svg";
+import { changeCompanyStatus } from "@/services/companies/companiesApi"; // Import the API function
 
 export default function CompanyDialog({
                                           open,
@@ -19,6 +21,7 @@ export default function CompanyDialog({
                                           onAdd,
                                           onAccept,
                                           onDecline,
+                                          isLoading = false
                                       }) {
     const isViewMode = mode === "view";
 
@@ -35,6 +38,7 @@ export default function CompanyDialog({
     const [logoViewerOpen, setLogoViewerOpen] = useState(false);
     const [showAcceptDialog, setShowAcceptDialog] = useState(false);
     const [showRejectDialog, setShowRejectDialog] = useState(false);
+    const [isChangingStatus, setIsChangingStatus] = useState(false);
 
     // Create a stable initial data reference
     const initialDataRef = React.useRef(initialData);
@@ -53,20 +57,39 @@ export default function CompanyDialog({
         setErrors({});
         setShowAcceptDialog(false);
         setShowRejectDialog(false);
+        setIsChangingStatus(false);
     }, []);
 
     useEffect(() => {
         if (open) {
             const data = initialDataRef.current || {};
+
+            // Normalize documents for both create and view modes
+            let normalizedDocuments = [];
+            if (data.documents && Array.isArray(data.documents)) {
+                normalizedDocuments = data.documents.map(doc => {
+                    if (typeof doc === 'string') {
+                        // If it's a URL string, create an object with URL and detect type
+                        const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(doc);
+                        return {
+                            url: doc,
+                            name: doc.split('/').pop(),
+                            type: isImage ? 'image' : 'document'
+                        };
+                    }
+                    return doc;
+                });
+            }
+
             setFormData({
                 name_of_company: data.name_of_company || "",
                 name_of_owner: data.name_of_owner || "",
                 license_number: data.license_number || "",
                 founding_date: data.founding_date || "",
-                email: data.email || "",
+                email: isViewMode ? data.user?.email : data.email || "",
                 phone: data.phone || "",
                 country_code: data.country_code || "+963",
-                documents: data.documents || [],
+                documents: normalizedDocuments,
                 description: data.description || "",
                 latitude: data.latitude || null,
                 longitude: data.longitude || null,
@@ -77,7 +100,7 @@ export default function CompanyDialog({
             // Reset form when dialog closes to ensure it's fresh next time
             resetForm();
         }
-    }, [open, resetForm]);
+    }, [open, resetForm, isViewMode]);
 
     // Get today's date in YYYY-MM-DD format for date input max value
     const getTodayDate = () => {
@@ -184,7 +207,7 @@ export default function CompanyDialog({
         }
     };
 
-    const handleAdd = () => {
+    const validateForm = () => {
         const newErrors = {};
         if (!formData.name_of_company) newErrors.name_of_company = "اسم الشركة مطلوب";
         if (!formData.name_of_owner) newErrors.name_of_owner = "اسم صاحب الشركة مطلوب";
@@ -199,11 +222,16 @@ export default function CompanyDialog({
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             toast.error("يرجى ملء جميع الحقول الإلزامية");
-            return;
+            return false;
         }
         setErrors({});
-        onAdd && onAdd(formData);
-        onClose();
+        return true;
+    };
+
+    const handleAddClick = () => {
+        if (validateForm()) {
+            onAdd && onAdd(formData);
+        }
     };
 
     const openDocumentViewer = (index) => {
@@ -225,16 +253,36 @@ export default function CompanyDialog({
         setShowRejectDialog(true);
     };
 
-    const handleConfirmAccept = () => {
+    const handleConfirmAccept = async () => {
         setShowAcceptDialog(false);
-        onAccept && onAccept(initialData);
-        onClose();
+        setIsChangingStatus(true);
+
+        try {
+            await changeCompanyStatus(initialData.id, 'accept');
+            toast.success("تم قبول الشركة بنجاح");
+            onAccept && onAccept(initialData);
+            onClose();
+        } catch (error) {
+            toast.error("فشل في قبول الشركة: " + (error.response?.data?.message || error.message));
+        } finally {
+            setIsChangingStatus(false);
+        }
     };
 
-    const handleConfirmReject = (reason) => {
+    const handleConfirmReject = async (reason) => {
         setShowRejectDialog(false);
-        onDecline && onDecline({ ...initialData, rejectionReason: reason });
-        onClose();
+        setIsChangingStatus(true);
+
+        try {
+            await changeCompanyStatus(initialData.id, 'reject', reason);
+            toast.success("تم رفض الشركة بنجاح");
+            onDecline && onDecline({ ...initialData, rejectionReason: reason });
+            onClose();
+        } catch (error) {
+            toast.error("فشل في رفض الشركة: " + (error.response?.data?.message || error.message));
+        } finally {
+            setIsChangingStatus(false);
+        }
     };
 
     if (!open) return null;
@@ -274,11 +322,11 @@ export default function CompanyDialog({
                                     />
                                 </div>
                             )}
-                            {!isViewMode && (
+                            {!isViewMode && !isLoading && (
                                 <>
                                     <label htmlFor="logo-input" className="absolute -bottom-1 -right-1 w-9 h-9 bg-green text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-green-dark transition-all">
                                         <Upload size={20}/>
-                                        <input id="logo-input" type="file" accept="image/*" onChange={handleLogoChange} className="hidden"/>
+                                        <input id="logo-input" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" disabled={isLoading}/>
                                     </label>
                                     {logoPreview && (
                                         <button onClick={handleRemoveLogo} type="button" className="absolute -bottom-1 -left-1 w-9 h-9 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-all">
@@ -293,17 +341,17 @@ export default function CompanyDialog({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">اسم الشركة*</label>
-                            <input type="text" name="name_of_company" value={formData.name_of_company} onChange={handleChange} disabled={isViewMode} className={fieldClass(errors.name_of_company)} placeholder="اسم الشركة"/>
+                            <input type="text" name="name_of_company" value={formData.name_of_company} onChange={handleChange} disabled={isViewMode || isLoading} className={fieldClass(errors.name_of_company)} placeholder="اسم الشركة"/>
                             {errors.name_of_company && <p className="text-red-500 text-xs mt-1">{errors.name_of_company}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">اسم صاحب الشركة*</label>
-                            <input type="text" name="name_of_owner" value={formData.name_of_owner} onChange={handleChange} disabled={isViewMode} className={fieldClass(errors.name_of_owner)} placeholder="اسم صاحب الشركة"/>
+                            <input type="text" name="name_of_owner" value={formData.name_of_owner} onChange={handleChange} disabled={isViewMode || isLoading} className={fieldClass(errors.name_of_owner)} placeholder="اسم صاحب الشركة"/>
                             {errors.name_of_owner && <p className="text-red-500 text-xs mt-1">{errors.name_of_owner}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">رقم الترخيص*</label>
-                            <input type="text" name="license_number" value={formData.license_number} onChange={handleChange} disabled={isViewMode} className={fieldClass(errors.license_number)} placeholder="رقم الترخيص"/>
+                            <input type="text" name="license_number" value={formData.license_number} onChange={handleChange} disabled={isViewMode || isLoading} className={fieldClass(errors.license_number)} placeholder="رقم الترخيص"/>
                             {errors.license_number && <p className="text-red-500 text-xs mt-1">{errors.license_number}</p>}
                         </div>
                         <div>
@@ -313,7 +361,7 @@ export default function CompanyDialog({
                                 name="founding_date"
                                 value={formData.founding_date}
                                 onChange={handleChange}
-                                disabled={isViewMode}
+                                disabled={isViewMode || isLoading}
                                 className={fieldClass(errors.founding_date)}
                                 max={getTodayDate()} // Restrict to today and past dates
                             />
@@ -321,13 +369,13 @@ export default function CompanyDialog({
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني*</label>
-                            <input type="email" name="email" value={formData.email} onChange={handleChange} disabled={isViewMode} className={fieldClass(errors.email)} placeholder="example@email.com"/>
+                            <input type="email" name="email" value={formData.email} onChange={handleChange} disabled={isViewMode || isLoading} className={fieldClass(errors.email)} placeholder="example@email.com"/>
                             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف*</label>
                             <div className="placeform-phone-wrapper">
-                                <PhoneInput country={"sy"} value={`${formData.country_code}${formData.phone}`} onChange={handlePhoneChange} enableSearch disabled={isViewMode} containerClass={`react-tel-input ${errors.phone ? "phone-error" : ""} show-dialcode`} inputClass="form-control" buttonClass="flag-dropdown" />
+                                <PhoneInput country={"sy"} value={`${formData.country_code}${formData.phone}`} onChange={handlePhoneChange} enableSearch disabled={isViewMode || isLoading} containerClass={`react-tel-input ${errors.phone ? "phone-error" : ""} show-dialcode`} inputClass="form-control" buttonClass="flag-dropdown" />
                             </div>
                             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                         </div>
@@ -335,24 +383,24 @@ export default function CompanyDialog({
                         {/* Description and Documents are now side-by-side */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">الوصف*</label>
-                            <textarea name="description" value={formData.description} onChange={handleChange} disabled={isViewMode} rows={4} className={`${fieldClass(errors.description)} resize-none`} placeholder="وصف الشركة ونشاطها"/>
+                            <textarea name="description" value={formData.description} onChange={handleChange} disabled={isViewMode || isLoading} rows={4} className={`${fieldClass(errors.description)} resize-none`} placeholder="وصف الشركة ونشاطها"/>
                             {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">الوثائق*</label>
                             <div className="relative">
-                                <label role="filepicker" className={`${fieldClass(errors.documents)} flex items-center justify-between ${!isViewMode ? 'cursor-pointer' : 'cursor-default bg-gray-100'}`}>
-                  <span className="text-sm text-gray-700">
-                    {formData.documents.length > 0 ? `${formData.documents.length} ملفات مختارة` : "اختر المستندات والصور"}
-                  </span>
+                                <label role="filepicker" className={`${fieldClass(errors.documents)} flex items-center justify-between ${!isViewMode && !isLoading ? 'cursor-pointer' : 'cursor-default bg-gray-100'}`}>
+                                    <span className="text-sm text-gray-700">
+                                        {formData.documents.length > 0 ? `${formData.documents.length} ملفات مختارة` : "اختر المستندات والصور"}
+                                    </span>
                                     <Paperclip size={18} className="text-gray-500"/>
-                                    {!isViewMode && (
+                                    {!isViewMode && !isLoading && (
                                         <input
                                             type="file"
                                             multiple
                                             onChange={handleDocumentsChange}
                                             className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                                            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
                                         />
                                     )}
                                 </label>
@@ -366,52 +414,76 @@ export default function CompanyDialog({
                             {formData.documents.length > 0 && (
                                 <div className="mt-4">
                                     <div className="flex flex-wrap gap-2">
-                                        {formData.documents.map((doc, index) => (
-                                            <div
-                                                key={index}
-                                                className="relative w-[90px] h-[90px] border rounded-xl overflow-hidden group"
-                                            >
-                                                {doc.type === 'image' ? (
-                                                    <img
-                                                        src={doc.url}
-                                                        alt={doc.name}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.parentNode.style.display = "none";
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-2">
-                                                        <Paperclip size={24} className="text-gray-400 mb-1" />
-                                                        <span className="text-xs text-gray-600 text-center truncate w-full">
-                              {doc.name}
-                            </span>
-                                                    </div>
-                                                )}
+                                        {formData.documents.map((doc, index) => {
+                                            // Handle both string URLs and file objects
+                                            const docUrl = typeof doc === 'string' ? doc : doc.url;
+                                            const docName = typeof doc === 'string'
+                                                ? doc.split('/').pop()
+                                                : doc.name || 'ملف غير معروف';
 
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openDocumentViewer(index)}
-                                                        className="p-2 bg-green text-white rounded-full hover:bg-green-dark"
-                                                        aria-label="معاينة الملف"
-                                                    >
-                                                        <Eye size={18} />
-                                                    </button>
-                                                    {!isViewMode && (
+                                            // Check if it's an image based on file extension
+                                            const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(docUrl || '');
+
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className="relative w-[90px] h-[90px] border rounded-xl overflow-hidden group"
+                                                >
+                                                    {isImage ? (
+                                                        <>
+                                                            <img
+                                                                src={docUrl}
+                                                                alt={docName}
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    // If image fails to load, show document icon instead
+                                                                    e.target.style.display = 'none';
+                                                                    const fallback = e.target.nextSibling;
+                                                                    if (fallback) {
+                                                                        fallback.style.display = 'flex';
+                                                                    }
+                                                                }}
+                                                            />
+                                                            {/* Fallback document icon (hidden by default) */}
+                                                            <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-2 hidden">
+                                                                <Paperclip size={24} className="text-gray-400 mb-1" />
+                                                                <span className="text-xs text-gray-600 text-center truncate w-full">
+                                                                    {docName}
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-2">
+                                                            <Paperclip size={24} className="text-gray-400 mb-1" />
+                                                            <span className="text-xs text-gray-600 text-center truncate w-full">
+                                                                {docName}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition">
                                                         <button
                                                             type="button"
-                                                            onClick={() => removeDocument(index)}
-                                                            className="p-2 bg-red-500 rounded-full hover:bg-red-600 text-white"
-                                                            aria-label="حذف الملف"
+                                                            onClick={() => openDocumentViewer(index)}
+                                                            className="p-2 bg-green text-white rounded-full hover:bg-green-dark"
+                                                            aria-label="معاينة الملف"
                                                         >
-                                                            <Trash2 size={18} />
+                                                            <Eye size={18} />
                                                         </button>
-                                                    )}
+                                                        {!isViewMode && !isLoading && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeDocument(index)}
+                                                                className="p-2 bg-red-500 rounded-full hover:bg-red-600 text-white"
+                                                                aria-label="حذف الملف"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -426,7 +498,7 @@ export default function CompanyDialog({
                                     initialPosition={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : undefined}
                                     initialPlace={formData.place}
                                     onSelect={handleLocationSelect}
-                                    disabled={isViewMode}
+                                    disabled={isViewMode || isLoading}
                                 />
                             )}
                             {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
@@ -434,8 +506,14 @@ export default function CompanyDialog({
 
                         <div className="md:col-span-2 mt-4">
                             {mode === "create" && (
-                                <button onClick={handleAdd} className="w-full bg-green text-white py-3 rounded-xl hover:shadow-md cursor-pointer transition flex items-center justify-center gap-2 font-semibold">
-                                    إضافة +
+                                <button
+                                    onClick={handleAddClick}
+                                    disabled={isLoading}
+                                    className={`w-full bg-green text-white py-3 rounded-xl hover:shadow-md cursor-pointer transition flex items-center justify-center gap-2 font-semibold ${
+                                        isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                >
+                                    {isLoading ? 'جاري الإضافة...' : 'إضافة +'}
                                 </button>
                             )}
                             {mode === "view" && (
@@ -443,17 +521,17 @@ export default function CompanyDialog({
                                     <button
                                         className="flex items-center ص w-full justify-center shadow-md shadow-grey-400 gap-2 rounded-2xl cursor-pointer px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-green"
                                         onClick={handleAcceptClick}
+                                        disabled={isChangingStatus}
                                     >
-
-                                        قبول
+                                        {isChangingStatus ? 'جاري المعالجة...' : 'قبول'}
                                         <img src={Approve} alt="Approve" className="w-5 h-5" />
                                     </button>
                                     <button
                                         className="flex items-center w-full justify-center gap-2 shadow-md shadow-grey-400  rounded-2xl cursor-pointer px-5 py-3 text-white font-bold text-base transition-opacity hover:opacity-90 bg-red-500"
                                         onClick={handleRejectClick}
+                                        disabled={isChangingStatus}
                                     >
-
-                                        رفض
+                                        {isChangingStatus ? 'جاري المعالجة...' : 'رفض'}
                                         <img src={Decline} alt="Decline" className="w-5 h-5" />
                                     </button>
                                 </div>
@@ -473,7 +551,8 @@ export default function CompanyDialog({
                 confirmText="تأكيد"
                 cancelText="تراجع"
                 confirmColor="green"
-                requestDate={initialData.date} // Pass the request date here
+                isLoading={isChangingStatus}
+                requestDate={initialData.user?.created_at} // Use the actual creation date from API
             />
 
             <ConfirmationDialog
@@ -489,7 +568,8 @@ export default function CompanyDialog({
                 textInputLabel="أسباب الرفض"
                 textInputPlaceholder="يرجى كتابة أسباب الرفض"
                 requiredTextInput={true}
-                requestDate={initialData.date} // Pass the request date here
+                isLoading={isChangingStatus}
+                requestDate={initialData.user?.created_at} // Use the actual creation date from API
             />
 
             {documentViewerOpen && (

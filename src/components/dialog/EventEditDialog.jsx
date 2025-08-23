@@ -295,7 +295,7 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
     const fieldClass = (e) => `${baseInput} ${e ? errorInput : validInput}`;
 
     return (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-9999" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-99999" onClick={onClose}>
             <div className="bg-[#f7f7f7] rounded-2xl w-full max-w-4xl p-6 relative overflow-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()} dir="rtl">
                 <button className="absolute top-4 left-4 text-gray-500 hover:text-gray-700" onClick={onClose}><XIcon/></button>
                 <h2 className="text-2xl font-bold text-green mb-4 text-right">تعديل الحدث</h2>

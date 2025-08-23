@@ -151,7 +151,7 @@ const UserPosts = () => {
 
     const handleDetailsClick = (postId, e) => {
         e.stopPropagation();
-        navigate(`/posts/${postId}`);
+        navigate(`/community/posts/${postId}`);
     };
 
     if (loading) return <PageSkeleton rows={6} />;

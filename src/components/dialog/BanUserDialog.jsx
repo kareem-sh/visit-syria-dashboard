@@ -6,13 +6,13 @@ const BanUserDialog = ({ userName, onBan, onClose }) => {
     const [duration, setDuration] = useState('حظر نهائي');
 
     const durationOptions = [
-        { label: 'دقيقة', value: 'دقيقة' },
-        { label: 'ساعة', value: 'ساعة' },
-        { label: 'يوم', value: 'يوم' },
-        { label: 'أسبوع', value: 'أسبوع' },
-        { label: 'شهر', value: 'شهر' },
-        { label: 'سنة', value: 'سنة' },
-        { label: 'حظر نهائي', value: 'حظر نهائي' },
+        { value: 'minute', label: 'دقيقة' },
+        { value: 'hour', label: 'ساعة' },
+        { value: 'day', label: 'يوم' },
+        { value: 'week', label: 'أسبوع' },
+        { value: 'month', label: 'شهر' },
+        { value: 'year', label: 'سنة' },
+        { value: 'always', label: 'حظر نهائي' }
     ];
 
     const handleBan = () => {
@@ -22,7 +22,7 @@ const BanUserDialog = ({ userName, onBan, onClose }) => {
         }
 
         // Determine if it's a permanent ban
-        const isPermanent = duration === 'حظر نهائي';
+        const isPermanent = duration === 'always';
         onBan(reason, duration, isPermanent);
         onClose();
     };
@@ -62,7 +62,7 @@ const BanUserDialog = ({ userName, onBan, onClose }) => {
                         rows="4"
                         maxLength="1000"
                         className={`w-full border border-gray-300 rounded-xl p-4 text-right resize-none focus:ring-2 focus:border-0 focus:outline-none ${
-                            duration === 'حظر نهائي'
+                            duration === 'always'
                                 ? 'focus:ring-red-500 focus:border-red-500'
                                 : 'focus:ring-gold-500 focus:border-gold-500'
                         }`}
@@ -83,11 +83,11 @@ const BanUserDialog = ({ userName, onBan, onClose }) => {
                                 key={option.value}
                                 onClick={() => setDuration(option.value)}
                                 className={`py-2 px-7 rounded-full text-sm transition-colors duration-200 cursor-pointer
-                                  ${duration === option.value && option.value === 'حظر نهائي'
+                                  ${duration === option.value && option.value === 'always'
                                     ? 'bg-red-600 text-white'
-                                    : duration === option.value && option.value !== 'حظر نهائي'
+                                    : duration === option.value && option.value !== 'always'
                                         ? 'bg-gold-500 text-white'
-                                        : (option.value === 'حظر نهائي'
+                                        : (option.value === 'always'
                                             ? 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white'
                                             : 'bg-gold-100 text-gold-600 hover:bg-gold-500 hover:text-white')
                                 }`}
@@ -102,7 +102,7 @@ const BanUserDialog = ({ userName, onBan, onClose }) => {
                 <div className="flex w-full pt-2">
                     <button
                         onClick={handleBan}
-                        className="w-full bg-red-500 text-white py-3 px-6 rounded-xl text-lg font-semibold hover:bg-red-600 transition-colors duration-200"
+                        className="w-full cursor-pointer bg-red-500 text-white py-3 px-6 rounded-xl text-lg font-semibold hover:bg-red-600 transition-colors duration-200"
                     >
                         حظر
                     </button>

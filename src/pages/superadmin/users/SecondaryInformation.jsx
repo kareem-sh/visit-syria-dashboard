@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import InfoBox from "@/components/common/InfoBox.jsx";
 import greenPen from "@/assets/icons/common/Green Pen.svg";
-import events from "@/assets/icons/sidebar/eventsFill.svg"
+import events from "@/assets/icons/sidebar/eventsStroke.svg"
 import trips from "@/assets/icons/common/trips.svg";
 
 export default function SecondaryInformation({ stats }) {

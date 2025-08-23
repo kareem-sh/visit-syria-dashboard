@@ -7,12 +7,12 @@ import EventForm from "@/components/dialog/EventForm.jsx";
 import { getEvents } from "@/services/events/eventsApi.js";
 import Skeleton from '@mui/material/Skeleton';
 import Box from '@mui/material/Box';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const columns = [
     { header: "الرقم التعريفي", accessor: "id" },
     { header: "اسم الحدث", accessor: "eventName" },
-    { header: "التاريخ", accessor: "date" },
+    { header: "التاريخ", accessor: "formattedDate" },
     { header: "المدة", accessor: "duration" },
     { header: "المكان", accessor: "location" },
     { header: "عدد التذاكر", accessor: "tickets_count" },
@@ -33,10 +33,16 @@ const filterOptions = [
 const Events = () => {
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const queryClient = useQueryClient();
 
     const { data: events = [], isLoading, isError } = useQuery({
         queryKey: ["events"],
-        queryFn: getEvents,
+        queryFn: async () => {
+            const eventsData = await getEvents();
+            return eventsData;
+        },
+        staleTime: 5 * 60 * 1000,
+        cacheTime: 10 * 60 * 1000,
     });
 
     const handleFilterChange = useCallback(
@@ -52,16 +58,12 @@ const Events = () => {
         switch (currentFilter) {
             case "latest":
                 newData.sort(
-                    (a, b) =>
-                        new Date(b.date.split("/").reverse().join("-")) -
-                        new Date(a.date.split("/").reverse().join("-"))
+                    (a, b) => new Date(b.date) - new Date(a.date)
                 );
                 break;
             case "oldest":
                 newData.sort(
-                    (a, b) =>
-                        new Date(a.date.split("/").reverse().join("-")) -
-                        new Date(b.date.split("/").reverse().join("-"))
+                    (a, b) => new Date(a.date) - new Date(b.date)
                 );
                 break;
             case "منتهية":
@@ -120,7 +122,9 @@ const Events = () => {
 
             {/* Title & Filter */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 px-2 mt-4">
-                <h1 className="text-h1-bold-24 text-gray-800">الأحداث</h1>
+                <div className="flex items-center gap-4">
+                    <h1 className="text-h1-bold-24 text-gray-800">الأحداث</h1>
+                </div>
                 <SortFilterButton
                     options={filterOptions.map((opt) => opt.label)}
                     selectedValue={currentFilter}

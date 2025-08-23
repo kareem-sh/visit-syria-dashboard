@@ -9,21 +9,21 @@ import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
 import notyetIcon from "@/assets/icons/table/notyet small.svg";
 
 export default function TripInfoCard({
-                                            title,
-                                            price,
-                                            capacity,
-                                            discount,
-                                            refNumber,
-                                            rating,
-                                            tags = [],
-                                            description,
-                                            company,
-                                            companyThumbnail = companyImage,
-                                            season = "الصيف",
-                                            duration,
-                                            date,
-                                            status = "لم تبدأ بعد",
-                                        }) {
+                                         title,
+                                         price,
+                                         capacity,
+                                         discount,
+                                         refNumber,
+                                         rating,
+                                         tags = [],
+                                         description,
+                                         company, // This is now an object: {id, name, image, rating}
+                                         companyThumbnail = companyImage,
+                                         season = "الصيف",
+                                         duration,
+                                         date,
+                                         status = "لم تبدأ بعد",
+                                     }) {
 
     // Status Badge logic reused from CommonTable
     const renderStatusBadge = (status) => {
@@ -82,17 +82,20 @@ export default function TripInfoCard({
             {/* Row 2: Company + Rating + Season + Tickets + Price */}
             <div className="flex flex-wrap items-center justify-between gap-6">
                 <div className="flex items-center gap-3">
-                    {companyThumbnail && (
-                        <img
-                            src={companyThumbnail}
-                            alt={company}
-                            className="w-15 h-15 rounded-full object-cover"
-                        />
-                    )}
+                    {/* Use company.image if available, otherwise fallback to companyThumbnail */}
+                    <img
+                        src={company?.image || companyThumbnail}
+                        alt={company?.name || "Company"}
+                        className="w-15 h-15 rounded-full object-cover"
+                    />
                     <div>
-                        <p className="text-h1-bold-22 flex items-center gap-1 pb-1">{company}</p>
+                        {/* Render company name instead of the whole company object */}
+                        <p className="text-h1-bold-22 flex items-center gap-1 pb-1">
+                            {company?.name || "غير محدد"}
+                        </p>
+                        {/* Use company rating if available, otherwise fallback to rating prop */}
                         <p className="text-yellow-500 flex items-center gap-1 text-[16px] font-semibold">
-                            {rating} <Star size={18} fill="currentColor" />
+                            {parseFloat(company?.rating || rating).toFixed(1)} <Star size={18} fill="currentColor" />
                         </p>
                     </div>
                 </div>
