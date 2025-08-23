@@ -20,6 +20,10 @@ import Posts from "@/pages/superadmin/community/Posts.jsx";
 import PostDetails from "@/pages/superadmin/community/PostDetails.jsx"
 import AboutSyria from "@/pages/superadmin/about-syria/AboutSyria.jsx";
 import BlogDetails from "@/pages/superadmin/about-syria/BlogDetails.jsx";
+import Support from "@/pages/superadmin/support/Support.jsx";
+import SupportDetails from "@/pages/superadmin/support/Support_details.jsx";
+import SendNotifications from "@/pages/superadmin/notifications/send_notifications.jsx";
+import Feedback from "@/pages/superadmin/feedback/feedback.jsx";
 
 const superadminRoutes = [
     { path: "/", element: <DashboardOverview /> },
@@ -45,7 +49,10 @@ const superadminRoutes = [
     { path: "/community/posts/:id", element: <PostDetails /> },
     { path: "/about-syria", element: <AboutSyria /> },
     { path: "/about-syria/blogs/:id", element: <BlogDetails /> },
-
+    { path: "/support/", element: <Support /> },
+    { path: "/support/:type", element: <SupportDetails /> },
+    { path: "/notifications/", element: <SendNotifications /> },
+    { path: "/feedback/", element: <Feedback /> },
 
 ];
 

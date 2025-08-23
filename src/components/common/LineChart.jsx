@@ -37,12 +37,13 @@ export default function LineChart({
     "ديسمبر",
   ],
   height = "31.25rem",
+  label = 'مقدار الارباح'
 }) {
   const data = {
     labels,
     datasets: [
       {
-        label: "مقدار الربح",
+        label: label,
         data: values,
         borderColor: color,
         backgroundColor: color,
