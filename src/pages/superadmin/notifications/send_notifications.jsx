@@ -103,7 +103,7 @@ const SendNotification = () => {
                     {/* Submit button with the custom green color and icon. */}
                     <button
                         type="submit"
-                        className="w-full bg-green-500 text-white font-semibold py-3 rounded-lg hover:bg-green-600 transition-colors flex justify-center items-center space-x-2">
+                        className="w-full bg-green text-white font-semibold py-3 rounded-lg hover:shadow:lg cursor-pointer transition-colors flex justify-center items-center space-x-2">
                         {/* The right-pointing arrow icon for the RTL layout. */}
                         <span style={{ direction: 'rtl' }}>
                             إرسال

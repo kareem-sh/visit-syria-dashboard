@@ -1,111 +1,104 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 import CommonTable from "@/components/common/CommonTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { getUserEvents } from "@/services/users/usersApi";
 
-const Events = () => {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+const UserEvents = () => {
     const [currentFilter, setCurrentFilter] = useState("الكل");
+    const queryClient = useQueryClient();
+    const { id: userId } = useParams();
 
-    // Mock data for events
-    const getMockData = () => {
-        return [
-            {
-                id: "EVT-001",
-                eventName: "مهرجان الربيع",
-                date: "15/03/2025",
-                duration: "5 أيام",
-                location: "دمشق - حديقة التجارة",
-                tickets_count: 200,
-                ticket_price: "50$",
-                status: "لم تبدأ بعد",
-            },
-            {
-                id: "EVT-002",
-                eventName: "حفل موسيقي",
-                date: "20/04/2025",
-                duration: "1 يوم",
-                location: "حلب - المسرح الوطني",
-                tickets_count: 150,
-                ticket_price: "75$",
-                status: "جارية حالياً",
-            },
-            {
-                id: "EVT-003",
-                eventName: "معرض الفنون",
-                date: "10/02/2025",
-                duration: "7 أيام",
-                location: "اللاذقية - قصر الثقافة",
-                tickets_count: 300,
-                ticket_price: "30$",
-                status: "منتهية",
-            },
-            {
-                id: "EVT-004",
-                eventName: "مؤتمر التكنولوجيا",
-                date: "05/05/2025",
-                duration: "3 أيام",
-                location: "دمشق - فندق الشام",
-                tickets_count: 100,
-                ticket_price: "120$",
-                status: "تم الإلغاء",
-            },
-            {
-                id: "EVT-005",
-                eventName: "مهرجان الطعام",
-                date: "12/06/2025",
-                duration: "2 أيام",
-                location: "حمص - ساحة الساعة",
-                tickets_count: 250,
-                ticket_price: "40$",
-                status: "جارية حالياً",
-            },
-            {
-                id: "EVT-006",
-                eventName: "عرض الأزياء",
-                date: "25/07/2025",
-                duration: "1 يوم",
-                location: "دمشق - قصر المؤتمرات",
-                tickets_count: 180,
-                ticket_price: "60$",
-                status: "لم تبدأ بعد",
-            },
-            {
-                id: "EVT-007",
-                eventName: "مسابقة الشعر",
-                date: "08/08/2025",
-                duration: "2 أيام",
-                location: "حماة - المركز الثقافي",
-                tickets_count: 120,
-                ticket_price: "25$",
-                status: "منتهية",
-            },
-            {
-                id: "EVT-008",
-                eventName: "مهرجان السينما",
-                date: "18/09/2025",
-                duration: "4 أيام",
-                location: "طرطوس - المسرح البلدي",
-                tickets_count: 220,
-                ticket_price: "45$",
-                status: "تم الإلغاء",
+    // Fetch user events using React Query
+    const { data: apiData, isLoading, error } = useQuery({
+        queryKey: ['userEvents', userId],
+        queryFn: async () => {
+            try {
+                const data = await getUserEvents(userId);
+
+                // Check if we already have events cached from the events page
+                const existingEventsCache = queryClient.getQueryData(['events']);
+
+                // Only update cache if we don't already have events data
+                if (data && data.activities && !existingEventsCache) {
+                    const eventsCache = [];
+
+                    data.activities.forEach(activity => {
+                        if (activity && activity.info) {
+                            const existingIndex = eventsCache.findIndex(e => e.id === activity.info.id);
+
+                            if (existingIndex === -1) {
+                                eventsCache.push(activity.info);
+                            } else {
+                                eventsCache[existingIndex] = {
+                                    ...eventsCache[existingIndex],
+                                    ...activity.info
+                                };
+                            }
+                        }
+                    });
+
+                    queryClient.setQueryData(['events'], eventsCache);
+                }
+
+                return data;
+            } catch (err) {
+                console.error("❌ Error fetching user events:", err);
+                throw err;
             }
-        ];
+        },
+        enabled: !!userId,
+        retry: 2,
+    });
+
+    // Transform API data to match the table structure
+    const transformApiData = (apiData) => {
+        if (!apiData || !apiData.activities) {
+            return [];
+        }
+
+        return apiData.activities.map(activity => {
+            if (!activity || !activity.info) return null;
+
+            const event = activity.info;
+            const bookingInfo = activity.booking_info || {};
+
+            // Format date from "2024-10-10" to "10/10/2024"
+            const formattedDate = event.date
+                ? event.date.split('-').reverse().join('/')
+                : event.start_date
+                    ? event.start_date.split('-').reverse().join('/')
+                    : 'N/A';
+
+            // Get status from API or use default
+            const status = event.status || event.account_status || "لم تبدأ بعد";
+
+            // Format price with currency
+            const ticketPrice = event.price
+                ? `${event.price}$`
+                : event.ticket_price
+                    ? `${event.ticket_price}$`
+                    : "N/A";
+
+            return {
+                id: event.id?.toString() || "N/A",
+                eventName: event.name || event.event_name || "غير معروف",
+                date: formattedDate,
+                duration: event.duration_days ? `${event.duration_days} أيام` :
+                    event.duration ? `${event.duration} أيام` : "N/A",
+                location: event.place || event.location || "غير معروف",
+                tickets_count: bookingInfo.number_of_tickets || event.tickets_count || event.tickets || 0,
+                ticket_price: ticketPrice,
+                status: status,
+                // Include original data for potential future use
+                originalData: activity
+            };
+        }).filter(Boolean); // Remove any null entries
     };
 
-    const columns = [
-        { header: "الرقم التعريفي", accessor: "id" },
-        { header: "اسم الحدث", accessor: "eventName" },
-        { header: "التاريخ", accessor: "date" },
-        { header: "المدة", accessor: "duration" },
-        { header: "المكان", accessor: "location" },
-        { header: "عدد التذاكر", accessor: "tickets_count" },
-        { header: "سعر التذكرة", accessor: "ticket_price" },
-        { header: "الحالة", accessor: "status" },
-    ];
-
+    // Filter options for events
     const filterOptions = [
         { label: "الكل", value: "الكل" },
         { label: "حسب التاريخ (الأقدم)", value: "oldest" },
@@ -120,30 +113,23 @@ const Events = () => {
         { label: "حسب السعر (منخفض)", value: "price_asc" },
     ];
 
-    // Load mock data with simulated API delay
-    useEffect(() => {
-        const loadMockData = async () => {
-            try {
-                setLoading(true);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                const mockData = getMockData();
-                setData(mockData);
-            } catch (err) {
-                setError("فشل في تحميل البيانات");
-                console.error("Failed to load mock data:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadMockData();
-    }, []);
+    // Columns configuration for events
+    const columns = [
+        { header: "الرقم التعريفي", accessor: "id" },
+        { header: "اسم الحدث", accessor: "eventName" },
+        { header: "التاريخ", accessor: "date" },
+        { header: "المدة", accessor: "duration" },
+        { header: "المكان", accessor: "location" },
+        { header: "عدد التذاكر", accessor: "tickets_count" },
+        { header: "سعر التذكرة", accessor: "ticket_price" },
+        { header: "الحالة", accessor: "status" },
+    ];
 
     // Filter and sort the table data
     const filteredData = useMemo(() => {
-        if (!data || data.length === 0) return [];
+        if (!apiData) return [];
 
-        let newData = [...data];
+        let newData = transformApiData(apiData);
 
         switch (currentFilter) {
             case "oldest":
@@ -174,15 +160,15 @@ const Events = () => {
                 break;
             case "price_desc":
                 newData.sort((a, b) => {
-                    const priceA = parseInt(a.ticket_price.replace('$', ''));
-                    const priceB = parseInt(b.ticket_price.replace('$', ''));
+                    const priceA = parseFloat(a.ticket_price.replace('$', '')) || 0;
+                    const priceB = parseFloat(b.ticket_price.replace('$', '')) || 0;
                     return priceB - priceA;
                 });
                 break;
             case "price_asc":
                 newData.sort((a, b) => {
-                    const priceA = parseInt(a.ticket_price.replace('$', ''));
-                    const priceB = parseInt(b.ticket_price.replace('$', ''));
+                    const priceA = parseFloat(a.ticket_price.replace('$', '')) || 0;
+                    const priceB = parseFloat(b.ticket_price.replace('$', '')) || 0;
                     return priceA - priceB;
                 });
                 break;
@@ -191,25 +177,26 @@ const Events = () => {
         }
 
         return newData;
-    }, [data, currentFilter]);
+    }, [apiData, currentFilter]);
 
-    if (loading) return <PageSkeleton rows={6} />;
+    if (isLoading) return <PageSkeleton rows={6} />;
 
     if (error) {
         return (
             <div className="p-8 bg-white rounded-lg shadow">
                 <div className="text-center text-red-600">
-                    <p>حدث خطأ في تحميل البيانات: {error}</p>
+                    <p>حدث خطأ في تحميل البيانات: {error.message}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-6 pt-2">
-            {/* Title & Filter */}
+        <div className="flex flex-col gap-4 pt-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-2">
-                <h1 className="text-h1-bold-24 text-gray-800">الأحداث المحجوزة</h1>
+                <h1 className="text-h1-bold-24 text-gray-800">
+                    الأحداث المحجوزة
+                </h1>
                 <SortFilterButton
                     options={filterOptions.map((opt) => opt.label)}
                     selectedValue={currentFilter === "الكل" ? "الكل" :
@@ -222,10 +209,9 @@ const Events = () => {
                 />
             </div>
 
-            {/* Table */}
             {filteredData.length === 0 ? (
                 <div className="p-8 bg-white rounded-lg shadow text-center">
-                    <p className="text-gray-500">لا توجد أحداث لعرضها</p>
+                    <p className="text-gray-500">لايوجد أحداث محجوزة</p>
                 </div>
             ) : (
                 <CommonTable
@@ -233,13 +219,10 @@ const Events = () => {
                     data={filteredData}
                     basePath="events"
                     entityType='event'
-                    showFilter={false}
-                    showHeader={false}
-                    showSeeAll={false}
                 />
             )}
         </div>
     );
 };
 
-export default Events;
+export default UserEvents;

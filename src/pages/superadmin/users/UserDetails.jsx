@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// UserDetails.jsx
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import HeaderInfoCard from '@/components/common/HeaderInfoCard';
@@ -9,6 +10,7 @@ import BanUserDialog from '@/components/dialog/BanUserDialog';
 import UnbanUserDialog from '@/components/dialog/UnbanUserDialog';
 import { getUserById, changeUserStatus } from '@/services/users/usersApi';
 import { PageSkeleton } from '@/components/common/PageSkeleton.jsx';
+import { userKeys } from './Users'; // Import the shared keys
 
 // ✅ Use react-toastify
 import { ToastContainer, toast } from "react-toastify";
@@ -20,12 +22,38 @@ export default function UserDetails() {
     const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
     const [isUnbanDialogOpen, setIsUnbanDialogOpen] = useState(false);
 
-    // Fetch user data
-    const { data: user, isLoading, isError, error } = useQuery({
-        queryKey: ['user', id],
+    // Try to get user from cache first
+    const cachedUsers = queryClient.getQueryData(userKeys.lists());
+    const cachedUser = cachedUsers?.find(user => user.id.toString() === id);
+
+    // Fetch user data only if not in cache
+    const { data: user, isLoading, isError, error, refetch: refetchUser } = useQuery({
+        queryKey: userKeys.detail(id),
         queryFn: () => getUserById(id),
-        enabled: !!id,
+        enabled: !!id && !cachedUser, // Only fetch if not in cache
+        initialData: cachedUser, // Use cached data as initial data
     });
+
+    // Use useMemo to ensure transformedUser updates when user data changes
+    const transformedUser = useMemo(() => {
+        if (!user) return null;
+
+        return {
+            id: user.id,
+            name: `${user.first_name} ${user.last_name}`,
+            imageUrl: user.photo,
+            nationality: user.country,
+            dob: user.date_of_birth,
+            gender: user.gender === 'female' ? 'أنثى' : 'ذكر',
+            email: user.email,
+            phone: ` ${user.phone} ${user.country_code.slice(1)}+`,
+            status: user.account_status || 'نشط',
+        };
+    }, [user]); // Re-run when user changes
+
+    const isBanned = useMemo(() => {
+        return transformedUser?.status && transformedUser.status !== 'نشط';
+    }, [transformedUser?.status]);
 
     // Function to fetch user data (for the dialog)
     const fetchUserData = async (userId) => {
@@ -38,11 +66,33 @@ export default function UserDetails() {
         }
     };
 
+    // Function to force refresh user data
+    const forceRefreshUserData = async () => {
+        try {
+            // Invalidate and refetch both queries
+            await queryClient.invalidateQueries({ queryKey: userKeys.detail(id) });
+            await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+
+            // Force immediate refetch
+            await refetchUser();
+
+            // Also refetch the users list if needed
+            const usersQuery = queryClient.getQueryState(userKeys.lists());
+            if (usersQuery) {
+                await queryClient.refetchQueries({ queryKey: userKeys.lists() });
+            }
+        } catch (error) {
+            console.error("Error refreshing user data:", error);
+        }
+    };
+
     // Change user status mutation
     const changeStatusMutation = useMutation({
         mutationFn: (statusData) => changeUserStatus(statusData),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries(['user', id]);
+        onSuccess: async (_, variables) => {
+            // Force immediate refresh of data
+            await forceRefreshUserData();
+
             setIsBanDialogOpen(false);
             setIsUnbanDialogOpen(false);
 
@@ -55,22 +105,11 @@ export default function UserDetails() {
         onError: (error) => {
             console.error('Error changing user status:', error);
             toast.error('حدث خطأ أثناء تغيير حالة المستخدم ❌');
+
+            // Even on error, try to refresh to ensure UI is in sync with server
+            forceRefreshUserData();
         }
     });
-
-    const isBanned = user?.account_status && user.account_status !== 'نشط';
-
-    const transformedUser = user ? {
-        id: user.id,
-        name: `${user.first_name} ${user.last_name}`,
-        imageUrl: user.photo,
-        nationality: user.country,
-        dob: user.date_of_birth,
-        gender: user.gender === 'female' ? 'أنثى' : 'ذكر',
-        email: user.email,
-        phone: ` ${user.phone} ${user.country_code.slice(1)}+`,
-        status: user.account_status || 'نشط',
-    } : null;
 
     const userStats = user ? {
         bookedTrips: user.reserved_trips,
@@ -127,7 +166,7 @@ export default function UserDetails() {
         );
     }
 
-    if (!user) {
+    if (!user || !transformedUser) {
         return (
             <div className="container mx-auto p-6">
                 <div className="text-center">
@@ -177,9 +216,7 @@ export default function UserDetails() {
                     onUnban={handleUnban}
                     onClose={() => setIsUnbanDialogOpen(false)}
                     isLoading={changeStatusMutation.isPending}
-                    onBanExpired={() => {
-                        queryClient.invalidateQueries(['user', id]);
-                    }}
+                    onBanExpired={forceRefreshUserData}
                     fetchUserData={fetchUserData}
                 />
             )}

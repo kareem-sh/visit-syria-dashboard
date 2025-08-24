@@ -1,6 +1,7 @@
 // components/users/UserPosts.jsx
-import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import SortFilterButton from "@/components/common/SortFilterButton";
 import { ChevronLeft } from "lucide-react";
@@ -8,159 +9,152 @@ import GreenPenIcon from "@/assets/icons/common/Green Pen.svg";
 import doneIcon from "@/assets/icons/table/done small.svg";
 import canceledIcon from "@/assets/icons/table/canceled small.svg";
 import inprogressIcon from "@/assets/icons/table/inprogress small.svg";
-import notyetIcon from "@/assets/icons/table/notyet small.svg";
-import Banned from "@/assets/icons/table/Banned.svg";
-import Warning from "@/assets/icons/table/Warning.svg";
+import { getUserPosts } from "@/services/users/usersApi";
 
 const UserPosts = () => {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const navigate = useNavigate();
+    const { id: userId } = useParams();
 
-    // Mock data for posts with correct status values
-    const getMockData = () => {
-        return [
-            {
-                id: "POST-001",
-                title: "تجربتي الرائعة في رحلة جبلة",
-                date: "15/03/2025",
-                status: "مقبول",
-            },
-            {
-                id: "POST-002",
-                title: "صور من مهرجان الربيع في دمشق",
-                date: "20/04/2025",
-                status: "مرفوض",
-            },
-            {
-                id: "POST-003",
-                title: "فيديو جولة في الأسواق القديمة",
-                date: "10/02/2025",
-                status: "في الانتظار",
-            },
-            {
-                id: "POST-004",
-                title: "نصائح للسفر إلى سوريا",
-                date: "05/05/2025",
-                status: "مقبول",
-            },
-            {
-                id: "POST-005",
-                title: "معرض الصور من حلب",
-                date: "12/06/2025",
-                status: "في الانتظار",
-            }
-        ];
-    };
+    // Fetch user posts using React Query
+    const { data: postsResponse, isLoading, error } = useQuery({
+        queryKey: ['userPosts', userId],
+        queryFn: () => getUserPosts(userId),
+        enabled: !!userId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        cacheTime: 10 * 60 * 1000, // 10 minutes
+    });
+
+    // Extract posts data from response (similar to Posts.jsx)
+    const postsData = postsResponse?.activities || [];
 
     // Filter options
     const filterOptions = [
         { label: "الكل", value: "الكل" },
         { label: "حسب التاريخ (الأقدم)", value: "oldest" },
         { label: "حسب التاريخ (الأحدث)", value: "latest" },
-        { label: "حسب الحالة (مقبول)", value: "مقبول" },
-        { label: "حسب الحالة (مرفوض)", value: "مرفوض" },
-        { label: "حسب الحالة (في الانتظار)", value: "في الانتظار" },
+        { label: "حسب الحالة (مقبول)", value: "Approved" },
+        { label: "حسب الحالة (مرفوض)", value: "Rejected" },
+        { label: "حسب الحالة (في الانتظار)", value: "Pending" },
     ];
 
-    // Status badge rendering (matching CommonTable style)
+    // Status badge rendering
     const renderStatusBadge = (status) => {
-        let icon, bg, text;
+        let icon, bg, text, displayStatus;
+
         switch (status) {
-            case "مقبول":
+            case "Approved":
                 icon = doneIcon;
                 bg = "bg-green-100/60";
                 text = "text-green";
+                displayStatus = "مقبول";
                 break;
-            case "مرفوض":
+            case "Rejected":
                 icon = canceledIcon;
                 bg = "bg-red-50";
                 text = "text-red-600";
+                displayStatus = "مرفوض";
                 break;
-            case "في الانتظار":
+            case "Pending":
                 icon = inprogressIcon;
                 bg = "bg-gold-500/10";
                 text = "text-gold";
+                displayStatus = "في الانتظار";
                 break;
             default:
-                return status;
+                icon = inprogressIcon;
+                bg = "bg-gray-100";
+                text = "text-gray-600";
+                displayStatus = status;
         }
+
         return (
             <div
                 className={`relative flex items-center justify-center min-w-[100px] h-[32px] px-[8px] py-[6px] rounded-[16px] ${bg} ${text} box-border leading-none`}
             >
-                <img src={icon} alt={status} className="w-5 h-5 ml-1" />
-                <span className="text-body-regular-14-auto">{status}</span>
+                <img src={icon} alt={displayStatus} className="w-5 h-5 ml-1" />
+                <span className="text-body-regular-14-auto">{displayStatus}</span>
             </div>
         );
     };
 
-    // Load mock data with simulated API delay
-    useEffect(() => {
-        const loadMockData = async () => {
-            try {
-                setLoading(true);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                const mockData = getMockData();
-                setData(mockData);
-            } catch (err) {
-                setError("فشل في تحميل البيانات");
-                console.error("Failed to load mock data:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Format date to DD/MM/YYYY
+    const formatDate = (dateString) => {
+        if (!dateString) return "غير محدد";
 
-        loadMockData();
-    }, []);
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "غير محدد";
+
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${day}/${month}/${year}`;
+    };
+
+    // Transform and prepare data for display
+    const transformedData = useMemo(() => {
+        if (!postsData || !Array.isArray(postsData)) return [];
+
+        return postsData.map(post => ({
+            id: post.id,
+            title: post.description ?
+                (post.description.length > 30
+                    ? post.description.substring(0, 30) + '...'
+                    : post.description)
+                : "بدون عنوان",
+            date: formatDate(post.created_at),
+            status: post.status || "Pending",
+            originalData: post
+        }));
+    }, [postsData]);
 
     // Filter and sort the data
     const filteredData = useMemo(() => {
-        if (!data || data.length === 0) return [];
+        if (!transformedData || transformedData.length === 0) return [];
 
-        let newData = [...data];
+        let newData = [...transformedData];
 
         switch (currentFilter) {
             case "oldest":
                 newData.sort((a, b) => {
-                    const dateA = new Date(a.date.split("/").reverse().join("-"));
-                    const dateB = new Date(b.date.split("/").reverse().join("-"));
+                    const dateA = new Date(a.originalData.created_at);
+                    const dateB = new Date(b.originalData.created_at);
                     return dateA - dateB;
                 });
                 break;
             case "latest":
                 newData.sort((a, b) => {
-                    const dateA = new Date(a.date.split("/").reverse().join("-"));
-                    const dateB = new Date(b.date.split("/").reverse().join("-"));
+                    const dateA = new Date(a.originalData.created_at);
+                    const dateB = new Date(b.originalData.created_at);
                     return dateB - dateA;
                 });
                 break;
-            case "مقبول":
-            case "مرفوض":
-            case "في الانتظار":
+            case "Approved":
+            case "Rejected":
+            case "Pending":
                 newData = newData.filter((item) => item.status === currentFilter);
                 break;
             default:
+                // "الكل" - no filtering needed
                 break;
         }
 
         return newData;
-    }, [data, currentFilter]);
+    }, [transformedData, currentFilter]);
 
     const handleDetailsClick = (postId, e) => {
         e.stopPropagation();
         navigate(`/community/posts/${postId}`);
     };
 
-    if (loading) return <PageSkeleton rows={6} />;
+    if (isLoading) return <PageSkeleton rows={6} />;
 
     if (error) {
         return (
             <div className="p-8 bg-white rounded-lg shadow">
                 <div className="text-center text-red-600">
-                    <p>حدث خطأ في تحميل البيانات: {error}</p>
+                    <p>حدث خطأ في تحميل البيانات: {error.message}</p>
                 </div>
             </div>
         );
@@ -190,7 +184,7 @@ const UserPosts = () => {
                         <p className="text-gray-500">لا توجد منشورات لعرضها</p>
                     </div>
                 ) : (
-                    filteredData.map((post, index) => (
+                    filteredData.map((post) => (
                         <div
                             key={post.id}
                             className="grid grid-cols-4 bg-white px-6 rounded-2xl shadow-sm text-sm text-gray-700 h-[75px] items-center"

@@ -18,7 +18,6 @@ const queryClient = new QueryClient({
 
 const App = () => {
     return (
-        <QueryClientProvider client={queryClient}>
             <SidebarProvider>
                     <ToastContainer
                         position="top-left"
@@ -29,7 +28,6 @@ const App = () => {
                         rtl={true}
                         pauseOnFocusLoss
                         draggable
-                        pauseOnHover
                         theme="light"
                     />
 
@@ -45,7 +43,6 @@ const App = () => {
                         </Routes>
                     </MainLayout>
             </SidebarProvider>
-        </QueryClientProvider>
     );
 };
 

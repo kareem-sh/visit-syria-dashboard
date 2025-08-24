@@ -2,30 +2,17 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import DamascusStarTop from "@/assets/images/Damascus Star Top.svg";
 import DamascusStarBottom from "@/assets/images/Damascus Star Bottom.svg";
-import Plus from "@/assets/icons/common/plus icon.svg";
 import PoliciesComp from "@/assets/icons/common/policies-comp.svg"
 import Policies from "@/assets/icons/common/policies.svg"
+import { ChevronLeft } from "lucide-react";
 
-/**
- * A reusable banner component with a title, policies, and a navigation button.
- * It's designed to be responsive and visually appealing.
- *
- * @param {object} props The component props.
- * @param {string} props.title The main title of the banner.
- * @param {string} props.icon The source URL for the main icon on the right.
- * @param {number} props.p The number of policies for the first icon.
- * @param {number} props.p_comp The number of policies for the second icon.
- * @param {string} [props.bgColor="bg-white"] The background color Tailwind class.
- * @param {string} [props.buttonText="التفاصيل >"] The text for the button.
- * @param {string} props.navigateTo The URL path to navigate to on button click.
- */
 function BannerWithRightIcon({
     title,
     icon,
     p,
     p_comp,
     bgColor = "bg-white",
-    buttonText = "التفاصيل >",
+    buttonText = "التفاصيل",
     navigateTo
 }) {
     const navigate = useNavigate();
@@ -58,12 +45,12 @@ function BannerWithRightIcon({
             />
             
             {/* Main content container */}
-            <div className="flex items-center justify-between w-full z-10 text-black">
-                <div className="flex flex-col justify-center">
+            <div className="flex w-full z-10 text-black">
+                <div className="flex flex-col items-start">
                     <h2 className="text-[40px] font-bold mb-4">{title}</h2>
                     
                     {/* Flex container for the policies, with a small gap between them */}
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="flex gap-4 mb-4">
                         {/* First policy icon and text */}
                         <div className="flex items-center gap-1">
                             <img
@@ -92,11 +79,11 @@ function BannerWithRightIcon({
                     {/* The navigation button */}
                     <button
                         onClick={handleButtonClick}
-                        className="flex items-center text-green px-10 py-3 rounded-2xl font-semibold b shadow hover:cursor-pointer w-fit"
+                        className="flex  text-green  py-3 rounded-2xl font-semibold hover:cursor-pointer "
                     >
                         {buttonText}
                         {/* The plus icon next to the button text */}
-                        <img src={Plus} alt="plus icon" className="w-4 h-4 mr-2" />
+                        <ChevronLeft size={20}  />
                     </button>
                 </div>
             </div>

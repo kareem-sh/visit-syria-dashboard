@@ -1,6 +1,7 @@
 import React from "react";
 import { FaStar } from "react-icons/fa";
 import NoCommentsYet from "@/assets/images/No Comments Yet.png";
+import UserProfileImage from "@/assets/images/User Profile.svg"
 
 const CommentsSection = ({ comments = [], status = null ,showRatings =true}) => {
     // Check if there are no comments
@@ -30,16 +31,16 @@ const CommentsSection = ({ comments = [], status = null ,showRatings =true}) => 
                         <div className="flex flex-col items-start flex-1">
                             <div className="flex items-center gap-2">
                                 <img
-                                    src={comment.user_avatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
+                                    src={comment.user.profile_photo || comment.user_avatar || UserProfileImage}
                                     alt="avatar"
                                     className="w-11 h-11 rounded-full object-cover"
                                 />
                                 <div className="mt-2">
-                                    <h4 className="text-body-bold-16">{comment.user_name}</h4>
+                                    <h4 className="text-body-bold-16">{comment.user_name || comment.user.name}</h4>
                                     <span className="text-body-regular-caption-12  text-grey-600">{comment.created_at}</span>
                                 </div>
                             </div>
-                            <p className="text-body-regular-16-auto mt-3 text-(--text-paragraph)">{comment.body}</p>
+                            <p className="text-body-regular-16-auto mt-3 text-(--text-paragraph)">{comment.body || comment.comment}</p>
                         </div>
                         {showRatings && (
                         <div className="flex items-center text-yellow-500 text-sm gap-1 min-w-[60px]">

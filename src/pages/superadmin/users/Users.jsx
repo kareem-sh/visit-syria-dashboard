@@ -7,6 +7,15 @@ import CommonTable from "@/components/common/CommonTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
 import { getAllUsers } from "@/services/users/usersApi";
 
+// Define consistent query keys
+export const userKeys = {
+    all: ['users'],
+    lists: () => [...userKeys.all, 'list'],
+    list: (filters) => [...userKeys.lists(), { filters }],
+    details: () => [...userKeys.all, 'detail'],
+    detail: (id) => [...userKeys.details(), id],
+};
+
 export default function Users() {
     const [selectedStat, setSelectedStat] = useState("posts");
     const [currentFilter, setCurrentFilter] = useState("الكل");
@@ -27,9 +36,9 @@ export default function Users() {
         { label: "حسب الحالة (حظر نهائي)", value: "حظر نهائي" },
     ];
 
-    // Use React Query to fetch all users
+    // Use React Query to fetch all users with consistent key
     const { data: users = [], isLoading, isError, error } = useQuery({
-        queryKey: ['users'],
+        queryKey: userKeys.lists(),
         queryFn: getAllUsers,
         staleTime: 5 * 60 * 1000,
     });
