@@ -4,6 +4,7 @@ import { X, ChevronRight, ChevronLeft, Download, ZoomIn, ZoomOut } from "lucide-
 const DocumentViewer = ({ documents, initialIndex = 0, onClose }) => {
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
     const [zoomLevel, setZoomLevel] = useState(1);
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -16,14 +17,18 @@ const DocumentViewer = ({ documents, initialIndex = 0, onClose }) => {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [currentIndex, onClose]);
 
+    useEffect(() => {
+        // Reset image error when document changes
+        setImageError(false);
+        setZoomLevel(1);
+    }, [currentIndex]);
+
     const nextDocument = () => {
         setCurrentIndex((prev) => (prev + 1) % documents.length);
-        setZoomLevel(1);
     };
 
     const prevDocument = () => {
         setCurrentIndex((prev) => (prev - 1 + documents.length) % documents.length);
-        setZoomLevel(1);
     };
 
     const zoomIn = () => {
@@ -36,22 +41,33 @@ const DocumentViewer = ({ documents, initialIndex = 0, onClose }) => {
 
     const downloadDocument = () => {
         const currentDoc = documents[currentIndex];
-        if (typeof currentDoc === 'string' || currentDoc.url) {
-            // Handle URL strings (from API)
-            const url = typeof currentDoc === 'string' ? currentDoc : currentDoc.url;
+
+        // Handle different document types
+        if (typeof currentDoc === 'string') {
+            // URL string from API
             const link = document.createElement("a");
-            link.href = url;
-            link.download = url.split('/').pop() || "document";
+            link.href = currentDoc;
+            link.download = currentDoc.split('/').pop() || "document";
             link.target = "_blank";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        } else if (currentDoc instanceof File) {
-            // Handle File objects (from upload)
-            const url = URL.createObjectURL(currentDoc);
+        } else if (currentDoc.url) {
+            // Object with URL property (could be from API or upload)
+            const link = document.createElement("a");
+            link.href = currentDoc.url;
+            link.download = currentDoc.name || currentDoc.url.split('/').pop() || "document";
+            link.target = "_blank";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else if (currentDoc instanceof File || currentDoc.file) {
+            // File object from upload
+            const file = currentDoc instanceof File ? currentDoc : currentDoc.file;
+            const url = URL.createObjectURL(file);
             const link = document.createElement("a");
             link.href = url;
-            link.download = currentDoc.name;
+            link.download = file.name;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -63,40 +79,43 @@ const DocumentViewer = ({ documents, initialIndex = 0, onClose }) => {
 
     const currentDoc = documents[currentIndex];
 
-    // Determine if the document is an image
-    const isImage = () => {
-        // If it's a URL string, check the extension
+    // Determine if the document is an image and get its URL
+    const getDocumentInfo = () => {
+        let url = null;
+        let isImage = false;
+        let name = "document";
+
+        // Handle different document types
         if (typeof currentDoc === 'string') {
-            return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(currentDoc);
+            // URL string from API
+            url = currentDoc;
+            name = url.split('/').pop();
+            isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
+        } else if (currentDoc.url) {
+            // Object with URL property
+            url = currentDoc.url;
+            name = currentDoc.name || url.split('/').pop();
+            isImage = currentDoc.type === 'image' || /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
+        } else if (currentDoc instanceof File) {
+            // File object from upload
+            url = URL.createObjectURL(currentDoc);
+            name = currentDoc.name;
+            isImage = currentDoc.type.startsWith('image/');
+        } else if (currentDoc.file) {
+            // Object with file property (from upload)
+            url = URL.createObjectURL(currentDoc.file);
+            name = currentDoc.name || currentDoc.file.name;
+            isImage = currentDoc.type === 'image' || currentDoc.file.type.startsWith('image/');
         }
 
-        // If it's a file object with type
-        if (currentDoc.type) {
-            return currentDoc.type.startsWith("image/");
-        }
-
-        // If it's a file object with name
-        if (currentDoc.name) {
-            return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(currentDoc.name);
-        }
-
-        // If it's a file object with url
-        if (currentDoc.url) {
-            return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(currentDoc.url);
-        }
-
-        return false;
+        return { url, isImage, name };
     };
 
-    const getDocumentUrl = () => {
-        if (typeof currentDoc === 'string') return currentDoc;
-        if (currentDoc.url) return currentDoc.url;
-        if (currentDoc instanceof File) return URL.createObjectURL(currentDoc);
-        return null;
-    };
+    const { url, isImage, name } = getDocumentInfo();
 
-    const documentUrl = getDocumentUrl();
-    const isImageFile = isImage();
+    const handleImageError = () => {
+        setImageError(true);
+    };
 
     return (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[10000]">
@@ -129,7 +148,7 @@ const DocumentViewer = ({ documents, initialIndex = 0, onClose }) => {
                 )}
 
                 <div className="absolute top-4 left-4 flex gap-2 z-10">
-                    {isImageFile && (
+                    {isImage && (
                         <>
                             <button
                                 className="text-white hover:text-gray-300 cursor-pointer bg-black/50 rounded-full p-2"
@@ -163,21 +182,20 @@ const DocumentViewer = ({ documents, initialIndex = 0, onClose }) => {
                 </div>
 
                 <div className="max-w-4xl max-h-full w-full h-full flex items-center justify-center p-4">
-                    {isImageFile && documentUrl ? (
+                    {isImage && url && !imageError ? (
                         <img
-                            src={documentUrl}
-                            alt={typeof currentDoc === 'string' ? "Document" : currentDoc.name || "Document"}
+                            src={url}
+                            alt={name}
                             className="max-w-full max-h-full object-contain"
                             style={{ transform: `scale(${zoomLevel})` }}
+                            onError={handleImageError}
                         />
                     ) : (
                         <div className="bg-white p-8 rounded-lg text-center max-w-md">
-                            <p className="text-gray-700 mb-4">هذا النوع من الملفات لا يمكن معاينته</p>
-                            <p className="text-sm text-gray-500 mb-4">
-                                {typeof currentDoc === 'string'
-                                    ? currentDoc.split('/').pop()
-                                    : currentDoc.name || "ملف غير معروف"}
+                            <p className="text-gray-700 mb-4">
+                                {imageError ? "تعذر تحميل الصورة" : "هذا النوع من الملفات لا يمكن معاينته"}
                             </p>
+                            <p className="text-sm text-gray-500 mb-4">{name}</p>
                             <button
                                 onClick={downloadDocument}
                                 className="bg-green text-white px-4 py-2 rounded-lg hover:bg-green-dark"

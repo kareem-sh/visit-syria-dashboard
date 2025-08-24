@@ -1,5 +1,6 @@
+// components/dialog/BlogForm.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { X as XIcon, Trash2, Paperclip, Pencil } from "lucide-react";
+import { X as XIcon, Paperclip, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
 import Bin from "@/assets/icons/event/bin.svg";
 
@@ -9,37 +10,66 @@ export default function BlogForm({
                                      mode = "create",
                                      initialData = {},
                                      onSubmit,
+                                     isLoading = false,
                                  }) {
     const isEditMode = mode === "edit";
     const DESCRIPTION_MAX_LENGTH = 1000;
+    const DESCRIPTION_MIN_LENGTH = 10;
     const MAX_CATEGORIES = 5;
 
-    const categories = ["أثرية", "طبيعية", "طعام", "دينية", "تاريخية", "ثقافية", "عادات و تقاليد"];
+    const categories = ["أثرية", "طبيعية", "طعام", "دينية", "تاريخية", "ثقافية", "عادات وتقاليد"];
 
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         image: null,
         categories: [],
+        existingImageUrl: null, // Add this to track existing image URL
     });
 
     const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
     const fileInputRef = useRef(null);
+    const [hasExistingImage, setHasExistingImage] = useState(false);
 
     useEffect(() => {
         if (open) {
             if (isEditMode && initialData) {
+                // Check if initialData has image URL (from API)
+                const hasImageUrl = initialData.image_url || (typeof initialData.image === 'string' && initialData.image.startsWith('http'));
+
                 setFormData({
                     title: initialData.title || "",
-                    description: initialData.description || initialData.content || "",
-                    image: initialData.image || null,
-                    categories: initialData.categories || [initialData.category] || [],
+                    description: initialData.description || initialData.content || initialData.body || "",
+                    image: hasImageUrl ? null : initialData.image, // Only set as image if it's a File
+                    categories: initialData.categories || initialData.tags || [],
+                    existingImageUrl: hasImageUrl ? (initialData.image_url || initialData.image) : null, // Store existing image URL
                 });
-                setImagePreview(initialData.image || "https://images.pexels.com/photos/163016/water-wheel-mill-water-wheel-mill-wheel-163016.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1");
+
+                // Set image preview - handle both URL strings and File objects
+                if (initialData.image_url) {
+                    setImagePreview(initialData.image_url);
+                    setHasExistingImage(true);
+                } else if (initialData.image && typeof initialData.image === 'string' && initialData.image.startsWith('http')) {
+                    setImagePreview(initialData.image);
+                    setHasExistingImage(true);
+                } else if (initialData.image && initialData.image instanceof File) {
+                    setImagePreview(URL.createObjectURL(initialData.image));
+                    setHasExistingImage(false);
+                } else {
+                    setImagePreview("https://images.pexels.com/photos/163016/water-wheel-mill-water-wheel-mill-wheel-163016.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1");
+                    setHasExistingImage(false);
+                }
             } else {
-                setFormData({ title: "", description: "", image: null, categories: [] });
+                setFormData({
+                    title: "",
+                    description: "",
+                    image: null,
+                    categories: [],
+                    existingImageUrl: null
+                });
                 setImagePreview(null);
+                setHasExistingImage(false);
                 setErrors({});
                 if (fileInputRef.current) fileInputRef.current.value = "";
             }
@@ -58,15 +88,21 @@ export default function BlogForm({
                 toast.error("يرجى اختيار صورة صحيحة");
                 return;
             }
-            setFormData(prev => ({ ...prev, image: file }));
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("حجم الصورة يجب أن يكون أقل من 5MB");
+                return;
+            }
+            setFormData(prev => ({ ...prev, image: file, existingImageUrl: null }));
             setImagePreview(URL.createObjectURL(file));
+            setHasExistingImage(false); // User uploaded a new image
             setErrors(prev => ({ ...prev, image: null }));
         }
     };
 
     const handleRemoveImage = () => {
-        setFormData(prev => ({ ...prev, image: null }));
+        setFormData(prev => ({ ...prev, image: null, existingImageUrl: null }));
         setImagePreview(null);
+        setHasExistingImage(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
@@ -97,7 +133,8 @@ export default function BlogForm({
         const newErrors = {};
         if (!formData.title.trim()) newErrors.title = "عنوان المقالة مطلوب";
         if (!formData.description.trim()) newErrors.description = "الوصف مطلوب";
-        if (!formData.image && !imagePreview) newErrors.image = "صورة المقالة مطلوبة";
+        if (formData.description.trim().length < DESCRIPTION_MIN_LENGTH) newErrors.description = `يجب أن يحتوي الوصف على ${DESCRIPTION_MIN_LENGTH} حروف على الأقل`;
+        if (!formData.image && !formData.existingImageUrl && !imagePreview) newErrors.image = "صورة المقالة مطلوبة";
         if (formData.categories.length === 0) newErrors.categories = "يجب اختيار فئة واحدة على الأقل";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -109,8 +146,17 @@ export default function BlogForm({
             toast.error("يرجى ملء جميع الحقول الإلزامية");
             return;
         }
-        onSubmit(formData);
-        onClose();
+
+        // Prepare the data to send back to parent
+        const submitData = {
+            title: formData.title,
+            description: formData.description,
+            categories: formData.categories,
+            image: formData.image,
+            existingImageUrl: formData.existingImageUrl // Send the existing image URL back
+        };
+
+        onSubmit(submitData);
     };
 
     if (!open) return null;
@@ -137,7 +183,9 @@ export default function BlogForm({
                                 onChange={handleChange}
                                 className={fieldClass(errors.title)}
                                 placeholder="عنوان المقالة"
+                                disabled={isLoading}
                             />
+                            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                         </div>
                         <div className="relative">
                             <label className="text-body-regular-caption-12">الوصف*</label>
@@ -148,19 +196,28 @@ export default function BlogForm({
                                 rows={4}
                                 className={`${fieldClass(errors.description)} resize-none`}
                                 placeholder="الوصف"
+                                disabled={isLoading}
                             />
                             <p className="absolute bottom-2 left-3 text-xs text-gray-400">
                                 {formData.description.length}/{DESCRIPTION_MAX_LENGTH}
                             </p>
+                            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+                            {/* Add validation message for minimum length */}
+                            {formData.description.length > 0 && formData.description.length < DESCRIPTION_MIN_LENGTH && (
+                                <p className="text-red-500 text-xs mt-1">يجب أن يحتوي على {DESCRIPTION_MIN_LENGTH} حروف على الأقل</p>
+                            )}
                         </div>
                     </div>
 
                     <div>
+                        <label className="text-body-regular-caption-12">صورة المقالة*</label>
                         <div className="relative">
-                            <label className={`${fieldClass(errors.image)} flex items-center justify-between cursor-pointer`}>
-                <span className="text-sm text-gray-500">
-                  {imagePreview ? (typeof formData.image === 'object' ? formData.image.name : 'تم رفع الصورة') : "Images*"}
-                </span>
+                            <div className={`${fieldClass(errors.image)} flex items-center justify-between cursor-pointer ${isLoading ? 'opacity-50' : ''}`}>
+                                <span className="text-sm text-gray-500">
+                                    {formData.image instanceof File ? formData.image.name :
+                                        formData.existingImageUrl ? 'صورة حالية' :
+                                            imagePreview ? 'تم رفع الصورة' : "اختر صورة..."}
+                                </span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-gray-400">1/1</span>
                                     <Paperclip size={18} className="text-gray-500" />
@@ -171,24 +228,31 @@ export default function BlogForm({
                                     accept="image/*"
                                     onChange={handleImageChange}
                                     className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                    disabled={isLoading}
                                 />
-                            </label>
+                            </div>
                         </div>
                         {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
                     </div>
+
                     {imagePreview && (
                         <div className="mt-4 relative group w-full">
                             <img src={imagePreview} alt="Blog Preview" className="w-full h-48 object-cover rounded-xl" />
                             <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                                <button type="button" onClick={handleRemoveImage} >
-                                    <img src={Bin} alt={"حذف الصورة"} className="w-11 h-11 cursor-pointer" />
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    disabled={isLoading}
+                                    className="p-2 cursor-pointer transition-colors"
+                                >
+                                    <img src={Bin} alt={"حذف الصورة"} className="w-8 h-8" />
                                 </button>
                             </div>
                         </div>
                     )}
 
                     <div>
-                        <h3 className="text-md font-semibold text-gray-700 mb-3">الفئة</h3>
+                        <h3 className="text-md font-semibold text-gray-700 mb-3">الفئة*</h3>
                         <div className="flex flex-wrap gap-2 justify-between">
                             {categories.map((category) => (
                                 <button
@@ -198,8 +262,9 @@ export default function BlogForm({
                                     className={`px-4 py-2 rounded-full text-body-bold-14 cursor-pointer min-w-[100px] transition-colors ${
                                         formData.categories.includes(category)
                                             ? "bg-green text-white border border-green"
-                                            : " text-green hover:shadow-md border-2 "
-                                    }`}
+                                            : "border-2 border-green text-green hover:bg-green-50"
+                                    } ${isLoading ? 'opacity-50' : ''}`}
+                                    disabled={isLoading}
                                 >
                                     {category}
                                 </button>
@@ -211,15 +276,23 @@ export default function BlogForm({
                     <div className="pt-4">
                         <button
                             type="submit"
-                            className="w-full bg-green text-white py-3 rounded-xl hover:shadow-lg cursor-pointer transition flex items-center justify-center gap-2 font-semibold"
+                            disabled={isLoading}
+                            className={`w-full bg-green text-white py-3 rounded-xl hover:shadow-lg cursor-pointer transition flex items-center justify-center gap-2 font-semibold ${
+                                isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'
+                            }`}
                         >
-                            {isEditMode ? (
+                            {isLoading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    جاري المعالجة...
+                                </>
+                            ) : isEditMode ? (
                                 <>
                                     <Pencil size={18} />
-                                    تعديل
+                                    تعديل المقالة
                                 </>
                             ) : (
-                                "إضافة +"
+                                "إضافة مقالة +"
                             )}
                         </button>
                     </div>

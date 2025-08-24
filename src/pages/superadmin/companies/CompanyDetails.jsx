@@ -1,115 +1,145 @@
-// src/pages/CompanyDetails.jsx
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from "react-router-dom";
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import HeaderInfoCard from '@/components/common/HeaderInfoCard.jsx';
 import CompanyInfoCard from '@/components/common/CompanyInfoCard.jsx';
 import CommonTable from '@/components/common/CommonTable.jsx';
 import SortFilterButton from '@/components/common/SortFilterButton.jsx';
 import CompanyStatusDialog from '@/components/dialog/CompanyStatusDialog.jsx';
-
-// Mock data to illustrate how to use the component
-const mockCompanyData = {
-    id: 234087920,
-    name_of_company: 'تيك أوف',
-    name_of_owner: 'أحمد محسن',
-    image: null,
-    rating: 4.8,
-    trip_count: 55,
-    founding_date: '2004-09-02',
-    status: 'تم الانذار',
-    email: 'takeoff@gmail.com',
-    license_number: 'TM-3490209',
-    country_code: '+963',
-    phone: '993 333 333',
-    place: 'دمشق - شارع بغداد',
-    latitude: '33.5138',
-    longitude: '36.2765',
-    description: 'تعد تيك أوف واحدة من أبرز شركات السياحة والسفر في سوريا، حيث تقدم باقات سياحية متكاملة تلبي تطلعات الزوار المحليين والأجانب على حد سواء.',
-    documents: [
-        { name: 'license.pdf', type: 'document' }, { name: 'photo1.jpg', type: 'image', url: 'https://via.placeholder.com/150' },
-        { name: 'photo2.jpg', type: 'image', url: 'https://via.placeholder.com/150' }, { name: 'photo3.jpg', type: 'image', url: 'https://via.placeholder.com/150' },
-        { name: 'contract.docx', type: 'document' }, { name: 'brochure.pdf', type: 'document' },
-        { name: 'photo4.jpg', type: 'image', url: 'https://via.placeholder.com/150' }, { name: 'photo5.jpg', type: 'image', url: 'https://via.placeholder.com/150' },
-    ],
-};
-
-const mockTripsData = [
-    {
-        id: "5765",
-        tripName: "رحلة في جبلة",
-        date: "25/06/2025",
-        duration: "3 أيام",
-        tickets_count: 55,
-        ticket_price: "100$",
-        status: "لم تبدأ بعد",
-    },
-    {
-        id: "5766",
-        tripName: "رحلة غروب الشمس",
-        date: "26/06/2025",
-        duration: "1 يوم",
-        tickets_count: 40,
-        ticket_price: "80$",
-        status: "جارية حالياً",
-    },
-    {
-        id: "3405834",
-        tripName: "رحلة سوريا السياحية",
-        date: "31/08/2025",
-        duration: "3 أيام",
-        tickets_count: 55,
-        ticket_price: "100$",
-        status: "منتهية",
-    },
-    {
-        id: "54983",
-        tripName: "جولة في الشرق",
-        date: "20/10/2025",
-        duration: "3 أيام",
-        tickets_count: 55,
-        ticket_price: "100$",
-        status: "جارية حالياً",
-    },
-    {
-        id: "349834",
-        tripName: "رحلة إلى آثار تدمر",
-        date: "04/09/2025",
-        duration: "3 أيام",
-        tickets_count: 55,
-        ticket_price: "100$",
-        status: "تم الإلغاء",
-    },
-];
+import { getCompanyById, changeCompanyStatus } from '@/services/companies/companiesApi';
+import { getTripsByCompanyId } from '@/services/trips/trips';
+import Skeleton from '@mui/material/Skeleton';
+import Box from '@mui/material/Box';
+import { toast } from 'react-toastify';
 
 /**
  * Main page/component to display all details for a company.
  * It composes the Header and Info components.
  */
 export default function CompanyDetails() {
-    // Get the id from the URL parameters
     const { id } = useParams();
-
-    const companyData = mockCompanyData;
+    const queryClient = useQueryClient();
     const [currentFilter, setCurrentFilter] = useState("الكل");
-
-    // State to manage the visibility of the status change dialog
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+
+    // Query for fetching company data - will use cache if available
+    const {
+        data: companyResponse,
+        isLoading: isLoadingCompany,
+        isError: isErrorCompany,
+        error: companyError,
+    } = useQuery({
+        queryKey: ['company', id],
+        queryFn: () => getCompanyById(id),
+        staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+        cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
+    });
+
+    // Extract company data from the response
+    const companyData = useMemo(() => {
+        if (!companyResponse) return null;
+        return companyResponse.company || companyResponse;
+    }, [companyResponse]);
+
+    // Query for fetching trips data - will always fetch fresh data
+    const {
+        data: tripsResponse = [],
+        isLoading: isLoadingTrips,
+        isError: isErrorTrips,
+        error: tripsError
+    } = useQuery({
+        queryKey: ['companyTrips', id, currentFilter],
+        queryFn: () => getTripsByCompanyId(id, currentFilter !== "الكل" ? currentFilter : undefined),
+        enabled: !!id && !!companyData, // Only fetch trips if we have a company ID and company data
+        staleTime: 2 * 60 * 1000, // Data is fresh for 2 minutes
+        cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+
+    // Extract trips data from the response
+    const tripsData = useMemo(() => {
+        if (!tripsResponse) return [];
+
+        if (Array.isArray(tripsResponse)) {
+            return tripsResponse;
+        } else if (tripsResponse.trips && Array.isArray(tripsResponse.trips)) {
+            return tripsResponse.trips;
+        } else if (tripsResponse.data && Array.isArray(tripsResponse.data)) {
+            return tripsResponse.data;
+        } else {
+            console.warn('Unexpected trips response structure:', tripsResponse);
+            return [];
+        }
+    }, [tripsResponse]);
+
+    // Mutation for updating company status with optimistic updates
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ status, reason }) => changeCompanyStatus(id, status, reason),
+        onMutate: async ({ status, reason }) => {
+            // Cancel any outgoing refetches to avoid overwriting our optimistic update
+            await queryClient.cancelQueries(['company', id]);
+
+            // Snapshot the previous value
+            const previousCompany = queryClient.getQueryData(['company', id]);
+
+            // Optimistically update to the new value
+            queryClient.setQueryData(['company', id], (old) => {
+                if (!old) return old;
+
+                // Update the company status optimistically
+                const updatedCompany = {
+                    ...old,
+                    company: {
+                        ...old.company,
+                        status: status
+                    }
+                };
+
+                return updatedCompany;
+            });
+
+            // Return a context object with the snapshotted value
+            return { previousCompany };
+        },
+        onSuccess: (responseData) => {
+            console.log('Status change successful:', responseData);
+
+            // Invalidate and refetch all related queries to ensure we have fresh data
+            queryClient.invalidateQueries(['allCompanies']);
+
+
+            toast.success("تم تحديث حالة الشركة بنجاح");
+            setIsStatusDialogOpen(false);
+        },
+        onError: (error, variables, context) => {
+            console.error('Status change failed:', error);
+
+            // Roll back to the previous value on error
+            if (context?.previousCompany) {
+                queryClient.setQueryData(['company', id], context.previousCompany);
+            }
+
+            const errorMessage = error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message;
+            toast.error("فشل في تحديث حالة الشركة: " + errorMessage);
+        },
+        onSettled: () => {
+            // Always refetch company data after error or success to ensure we're in sync
+            queryClient.invalidateQueries(['company', id]);
+        }
+    });
 
     // Function to open the dialog
     const handleStatusChangeClick = useCallback(() => {
+        console.log('Opening status dialog for company:', id);
         setIsStatusDialogOpen(true);
-    }, []);
+    }, [id]);
 
     // Function to handle the confirmation from the dialog
     const handleStatusConfirm = useCallback((newStatus, reason) => {
-        console.log(`Updating company status to: ${newStatus} with reason: ${reason}`);
-        // Here you would make your API call to update the company status
-        // For example:
-        // api.updateCompanyStatus(id, { newStatus, reason });
-
-        // After successful API call, you would close the dialog
-        setIsStatusDialogOpen(false);
-    }, []);
+        console.log('Dialog confirmed:', newStatus, reason);
+        updateStatusMutation.mutate({ status: newStatus, reason });
+    }, [updateStatusMutation]);
 
     const tableColumns = [
         { header: "الرقم التعريفي", accessor: "id" },
@@ -135,37 +165,50 @@ export default function CompanyDetails() {
         setCurrentFilter(filterValue);
     }, []);
 
-    const filteredTripsData = useMemo(() => {
-        let newData = [...mockTripsData];
+    // Format trips data for the table
+    const formattedTripsData = useMemo(() => {
+        if (!tripsData || !Array.isArray(tripsData)) return [];
 
-        switch (currentFilter) {
-            case "latest":
-                newData.sort((a, b) => {
-                    const dateA = new Date(a.date.split("/").reverse().join("-"));
-                    const dateB = new Date(b.date.split("/").reverse().join("-"));
-                    return dateB - dateA;
-                });
-                break;
-            case "oldest":
-                newData.sort((a, b) => {
-                    const dateA = new Date(a.date.split("/").reverse().join("-"));
-                    const dateB = new Date(b.date.split("/").reverse().join("-"));
-                    return dateA - dateB;
-                });
-                break;
-            case "منتهية":
-            case "تم الإلغاء":
-            case "جارية حالياً":
-            case "لم تبدأ بعد":
-                newData = newData.filter((item) => item.status === currentFilter);
-                break;
-            default:
-                newData = mockTripsData;
-        }
+        return tripsData.map(trip => ({
+            id: trip.id,
+            tripName: trip.name || trip.tripName || trip.title || "N/A",
+            date: trip.date || trip.start_date || trip.created_at || "N/A",
+            duration: trip.days || trip.trip_duration || "N/A",
+            tickets_count: trip.tickets_count || trip.ticketsCount || trip.available_tickets || 0,
+            ticket_price: trip.ticket_price || trip.ticketPrice || trip.price || "N/A",
+            status: trip.status || trip.trip_status || "N/A",
+            originalData: trip
+        }));
+    }, [tripsData]);
 
-        return newData;
-    }, [currentFilter]);
+    // Show loading skeleton if data is being fetched
+    if (isLoadingCompany) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Skeleton variant="rectangular" width="100%" height={200} sx={{ mb: 2 }} />
+                <Skeleton variant="rectangular" width="100%" height={400} sx={{ mb: 2 }} />
+                <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+        );
+    }
 
+    // Show error message if company data failed to load
+    if (isErrorCompany) {
+        return (
+            <div className="p-4 text-red-600 font-semibold">
+                فشل تحميل بيانات الشركة: {companyError.message}
+            </div>
+        );
+    }
+
+    // Check if companyData is available
+    if (!companyData) {
+        return (
+            <div className="p-4 text-red-600 font-semibold">
+                لا توجد بيانات لل الشركة
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen">
@@ -175,7 +218,7 @@ export default function CompanyDetails() {
                     title={companyData.name_of_company}
                     imageUrl={companyData.image}
                     rating={companyData.rating}
-                    stats={[{ value: companyData.trip_count, label: 'عدد الرحلات' }]}
+                    stats={companyData.number_of_trips}
                     date={companyData.founding_date}
                     status={companyData.status}
                     onStatusChangeClick={handleStatusChangeClick}
@@ -196,20 +239,47 @@ export default function CompanyDetails() {
                             }}
                         />
                     </div>
-                    <CommonTable
-                        columns={tableColumns}
-                        data={filteredTripsData}
-                        basePath={`companies/${id}/trips`}
-                    />
+
+                    {isLoadingTrips ? (
+                        <Box sx={{ width: '100%' }}>
+                            {[...Array(5)].map((_, i) => (
+                                <Skeleton
+                                    key={i}
+                                    variant="rectangular"
+                                    width="100%"
+                                    height={50}
+                                    sx={{ mb: 1, borderRadius: 1 }}
+                                />
+                            ))}
+                        </Box>
+                    ) : isErrorTrips ? (
+                        <div className="p-4 text-red-600 font-semibold">
+                            فشل تحميل بيانات الرحلات: {tripsError.message}
+                        </div>
+                    ) : formattedTripsData.length === 0 ? (
+                        <div className="p-4 text-gray-600 text-center">
+                            لا توجد رحلات لهذه الشركة
+                        </div>
+                    ) : (
+                        <CommonTable
+                            columns={tableColumns}
+                            data={formattedTripsData}
+                            basePath={`companies/${id}/trips`}
+                        />
+                    )}
                 </div>
             </div>
 
             {/* The new dedicated dialog, correctly placed and managed */}
             <CompanyStatusDialog
                 isOpen={isStatusDialogOpen}
-                onClose={() => setIsStatusDialogOpen(false)}
+                onClose={() => {
+                    console.log('Closing status dialog');
+                    setIsStatusDialogOpen(false);
+                }}
                 currentStatus={companyData.status}
                 onConfirm={handleStatusConfirm}
+                isLoading={updateStatusMutation.isPending}
             />
         </div>
     );

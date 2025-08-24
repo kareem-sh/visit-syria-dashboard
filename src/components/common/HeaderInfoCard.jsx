@@ -72,13 +72,11 @@ export default function HeaderInfoCard({
             {/* Middle: Conditional Stats */}
             {entityType === 'company' && (
                 <div className="flex flex-col items-start gap-2 text-gray-600">
-                    {stats?.map((stat, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <img src={trips}  alt={formattedDate} />
-                            <span className="font-semibold text-black text-lg">{stat.value ?? 0}</span>
+                            <span className="font-semibold text-black text-lg">{stats ?? 0}</span>
                             <span className="text-body-bold-16 text-black">رحلة</span>
                         </div>
-                    ))}
                     {formattedDate && (
                         <div className="flex items-center gap-2">
                             <img src={calender}  alt={formattedDate} />

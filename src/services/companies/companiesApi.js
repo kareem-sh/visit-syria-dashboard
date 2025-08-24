@@ -3,14 +3,12 @@ import apiClient from "@/services/apiClient";
 export const createCompanyByAdmin = async (formData) => {
     try {
         const data = new FormData();
-
         Object.entries(formData).forEach(([key, value]) => {
             if (key === "documents" && Array.isArray(value)) {
                 value.forEach((doc, index) => {
                     data.append(`documents[${index}]`, doc.file || doc);
                 });
             } else if (key === "image" && value) {
-                // Handle the single image file
                 data.append(key, value);
             } else if (value !== undefined && value !== null) {
                 data.append(key, value);
@@ -21,7 +19,6 @@ export const createCompanyByAdmin = async (formData) => {
                 "Content-Type": "multipart/form-data",
             },
         });
-
         return res.data;
     } catch (err) {
         console.error("Error creating company:", err.response?.data || err);
@@ -32,9 +29,31 @@ export const createCompanyByAdmin = async (formData) => {
 export const getCompaniesOnHold = async () => {
     try {
         const res = await apiClient.get("/getCompaniesOnHold");
-        return res.data.companies || []; // Return only the companies array
+        return res.data.companies || [];
     } catch (err) {
         console.error("Error fetching companies on hold:", err.response?.data || err);
+        throw err;
+    }
+};
+
+export const getAllCompanies = async (params = {}) => {
+    try {
+        const res = await apiClient.get("/companies", {
+            params: params
+        });
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching all companies:", err.response?.data || err);
+        throw err;
+    }
+};
+
+export const getCompanyById = async (companyId) => {
+    try {
+        const res = await apiClient.get(`/showCompany/${companyId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching company by ID:", err.response?.data || err);
         throw err;
     }
 };
@@ -46,12 +65,16 @@ export const changeCompanyStatus = async (companyId, status, reason = null) => {
             status: status
         };
 
-        // Add reason only if provided (for reject case)
+        // Add reason only if provided (for status changes that require reason)
         if (reason) {
             requestData.reason = reason;
         }
 
+        console.log('Changing company status:', requestData);
+
         const res = await apiClient.post("/changeCompanyStatus", requestData);
+        console.log('Status change response:', res.data);
+
         return res.data;
     } catch (err) {
         console.error("Error changing company status:", err.response?.data || err);

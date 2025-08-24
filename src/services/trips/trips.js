@@ -30,3 +30,28 @@ export const getTripById = async (id) => {
         throw error;
     }
 };
+
+// New function to get trips by company ID with optional tag filter
+export const getTripsByCompanyId = async (companyId, tag = "الكل") => {
+    console.time('getTripsByCompanyId API Call');
+    try {
+        // Build query parameters
+        const params = {};
+        if (tag && tag !== "الكل") {
+            params.tag = tag;
+        }
+
+        const response = await apiClient.get(`/trip/company/${companyId}`, {
+            params: params
+        });
+
+        console.timeEnd('getTripsByCompanyId API Call');
+        console.log('API Response size:', JSON.stringify(response.data).length, 'bytes');
+
+        return response.data;
+    } catch (error) {
+        console.timeEnd('getTripsByCompanyId API Call');
+        console.error('Error in getTripsByCompanyId:', error);
+        throw error;
+    }
+};
