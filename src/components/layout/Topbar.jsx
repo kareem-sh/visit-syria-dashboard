@@ -8,6 +8,7 @@ import NotificationIcon from "@/assets/icons/common/notification_icon.svg";
 import NoNotification from "@/assets/icons/common/no_notifications.svg";
 import TravLogo from "@/assets/icons/common/trav_logo.svg";
 import ContactUs from "@/pages/superadmin/contact-us/ContactUs.jsx";
+import SearchScreen from "@/pages/superadmin/search/Search.jsx";
 
 const Topbar = () => {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
@@ -15,6 +16,7 @@ const Topbar = () => {
   // State to manage the visibility of the notifications dropdown
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showSearchScreen, setShowSearchScreen] = useState(false);
   // State to manage the list of notifications
   const [notifications, setNotifications] = useState([
     { id: 1, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
@@ -46,6 +48,7 @@ const Topbar = () => {
   };
 
   return (
+    showSearchScreen? <SearchScreen onClose={() => setShowSearchScreen(false)} />:
     <div
       dir="rtl"
       className="fixed top-0 h-[72px] flex items-center justify-between px-4 sm:px-6 py-[14px] bg-[var(--bg-card)] z-9999 transition-all duration-300"
@@ -78,6 +81,7 @@ const Topbar = () => {
           <input
             type="text"
             placeholder="البحث..."
+            onFocus={() => setShowSearchScreen(true)}
             className="w-full text-sm text-grey-800 bg-grey-100 rounded-xl focus:outline-none"
             style={{
               height: "44px",
