@@ -7,13 +7,16 @@ import PostHeader from './PostHeader';
 import PostStats from './PostStats';
 import CommentsSection from '@/components/common/CommentsSection';
 import ConfirmationDialog from '@/components/dialog/ConfirmationDialog';
+import GoldCircularProgress from '@/components/common/GoldCircularProgress'; // Import the loading component
 import { getPostById, updatePostStatus } from '@/services/posts/postsApi.js';
+import UserProfileImage from "@/assets/images/User Profile.svg";
 
 const PostDetails = () => {
     const { id } = useParams();
     const postId = parseInt(id);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [actionType, setActionType] = useState(null);
+    const [imageLoading, setImageLoading] = useState(true); // State for image loading
     const queryClient = useQueryClient();
 
     // Check cache first, then fetch from API if not found
@@ -202,7 +205,7 @@ const PostDetails = () => {
         author: postData.user?.name || 'مستخدم غير معروف',
         authorImage: postData.user?.profile_photo || 'https://i.pravatar.cc/150?img=1',
         title: postData.description?.substring(0, 30) + '...' || 'بدون عنوان',
-        mainImage: postData.image || 'https://placehold.co/800x400/cccccc/333333?text=صورة+غير+متوفرة',
+        mainImage: postData.image || UserProfileImage,
         description: postData.description || 'لا يوجد وصف',
         tags: postData.tags || [],
         status: postData.status === 'Approved' ? 'مقبول' :
@@ -231,15 +234,25 @@ const PostDetails = () => {
                 />
 
                 <main className="p-6">
-                    {/* Main Image */}
-                    <div className="mb-6">
+                    {/* Main Image with Loading Indicator */}
+                    <div className="mb-6 relative">
+                        {imageLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
+                                <GoldCircularProgress
+                                    color="#10b981" // emerald-500 color
+                                    size={40}
+                                />
+                            </div>
+                        )}
                         <img
                             src={mappedPostData.mainImage}
                             alt={mappedPostData.title}
-                            className="w-full h-auto object-cover rounded-xl"
+                            className={`w-full h-auto object-cover rounded-xl ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                            onLoad={() => setImageLoading(false)}
                             onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src='https://placehold.co/800x400/cccccc/333333?text=صورة+غير+متوفرة';
+                                setImageLoading(false);
                             }}
                         />
                     </div>
@@ -274,7 +287,7 @@ const PostDetails = () => {
             )}
 
             {/* Comments Section - Only show if approved */}
-            {isApproved && postData.comments && postData.comments.length > 0 && (
+            {isApproved  && (
                 <div>
                     <h1 className="text-h1-bold-24 mb-4 pr-2">التعليقات</h1>
                     <div className="max-h-[500px] overflow-y-auto">

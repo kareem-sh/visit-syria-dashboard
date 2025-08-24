@@ -5,8 +5,7 @@ import SortFilterButton from "@/components/common/SortFilterButton";
 import Banner from "@/components/common/Banner.jsx";
 import BlogIcon from "@/assets/images/BlogIcon.svg";
 import BlogForm from "@/components/dialog/BlogForm.jsx";
-import Skeleton from '@mui/material/Skeleton';
-import Box from '@mui/material/Box';
+import {PageSkeleton} from "@/components/common/PageSkeleton.jsx"
 import { toast } from "react-toastify";
 
 const AboutSyria = () => {
