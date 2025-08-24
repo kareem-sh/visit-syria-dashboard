@@ -1,8 +1,9 @@
+import { Outlet } from "react-router-dom";
 import { useSidebar } from "@/contexts/SidebarContext";
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
 
-const MainLayout = ({ children }) => {
+const MainLayout = () => {
   const { isSidebarOpen } = useSidebar();
 
   return (
@@ -23,7 +24,10 @@ const MainLayout = ({ children }) => {
             borderLeft: "1px solid var(--border-color)",
           }}
         >
-          <div className="max-w-full mx-auto">{children}</div>
+          <div className="max-w-full mx-auto">
+            {/* ✅ Will render matched route content */}
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
