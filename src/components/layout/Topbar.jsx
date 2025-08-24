@@ -7,12 +7,14 @@ import bellIcon from "@/assets/icons/sidebar/Notiifcations Fill.svg";
 import NotificationIcon from "@/assets/icons/common/notification_icon.svg";
 import NoNotification from "@/assets/icons/common/no_notifications.svg";
 import TravLogo from "@/assets/icons/common/trav_logo.svg";
+import ContactUs from "@/pages/superadmin/contact-us/ContactUs.jsx";
 
 const Topbar = () => {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   // State to manage the visibility of the notifications dropdown
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   // State to manage the list of notifications
   const [notifications, setNotifications] = useState([
     { id: 1, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
@@ -186,7 +188,9 @@ const Topbar = () => {
         </div>
 
         {/* User Info */}
-        <div className="flex items-center gap-2 text-sm text-grey-800">
+        <div 
+          className="flex items-center gap-2 text-sm text-grey-800 cursor-pointer"
+            onClick={() => setShowProfileDialog(true)}>
           <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
             {/* Placeholder for user image */}
             <img
@@ -200,6 +204,8 @@ const Topbar = () => {
           </div>
         </div>
       </div>
+        {/* 👇 الـ Dialog */}
+        {showProfileDialog && <ContactUs onClose={() => setShowProfileDialog(false)} />}
     </div>
   );
 };
