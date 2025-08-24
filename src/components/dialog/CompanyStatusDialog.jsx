@@ -9,7 +9,7 @@ import canceledIcon from "@/assets/icons/table/canceled small.svg";
 // Helper to normalize the "Warned" status for consistent logic
 const normalizeStatus = (status) => {
     if (status === "تم الانذار") {
-        return "تم الإنذار";
+        return "تم الانذار";
     }
     return status;
 };
@@ -33,7 +33,7 @@ export default function CompanyStatusDialog({
 
     const statusDetails = {
         "فعالة": { text: "فعالة", icon: doneIcon, bg: "bg-green-100/60", textColor: "text-green" },
-        "تم الإنذار": { text: "تم الإنذار", icon: Warning, bg: "bg-gold-500/10", textColor: "text-gold" },
+        "تم الانذار": { text: "تم الإنذار", icon: Warning, bg: "bg-gold-500/10", textColor: "text-gold" },
         "قيد الحذف": { text: "قيد الحذف", icon: canceledIcon, bg: "bg-red-50", textColor: "text-red-600" },
     };
 
@@ -45,11 +45,11 @@ export default function CompanyStatusDialog({
 
         switch (currentStatus) {
             case "فعالة":
-                return ["تم الإنذار"];
-            case "تم الإنذار":
+                return ["تم الانذار"];
+            case "تم الانذار":
                 return ["فعالة", "قيد الحذف"];
             case "قيد الحذف":
-                return ["فعالة"];
+                return ["فعالة", "تم الانذار"]; // Added "تم الانذار" as an option
             default:
                 return [];
         }
@@ -98,7 +98,9 @@ export default function CompanyStatusDialog({
 
     if (!isOpen) return null;
 
-    const showReason = selectedStatus !== "فعالة" && selectedStatus !== currentStatus;
+    const showReason = (selectedStatus !== "فعالة" && selectedStatus !== currentStatus) ||
+        (currentStatus === "قيد الحذف" && selectedStatus === "تم الانذار");
+
     const isConfirmEnabled = selectedStatus !== currentStatus && (showReason ? !!reason.trim() : true);
 
     const handleConfirm = () => {
@@ -131,16 +133,20 @@ export default function CompanyStatusDialog({
             case "فعالة":
                 return {
                     ...base,
-                    message: "هل أنت متأكد من تفعيل الشركة؟",
+                    message: currentStatus === "قيد الحذف"
+                        ? "هل أنت متأكد من إعادة تفعيل الشركة؟"
+                        : "هل أنت متأكد من تفعيل الشركة؟",
                     buttonText: "تأكيد التفعيل",
                     buttonColor: "bg-green",
                     focusColor: "focus:ring-green focus:border-green",
                 };
-            case "تم الإنذار":
+            case "تم الانذار":
                 return {
                     ...base,
-                    message: "هل أنت متأكد من توجيه إنذار للشركة؟",
-                    buttonText: "تأكيد الإنذار",
+                    message: currentStatus === "قيد الحذف"
+                        ? "هل أنت متأكد من نقل الشركة من قيد الحذف إلى تم الانذار؟"
+                        : "هل أنت متأكد من توجيه إنذار للشركة؟",
+                    buttonText: "تأكيد الانذار",
                     buttonColor: "bg-gold",
                     focusColor: "focus:ring-gold focus:border-gold",
                 };
@@ -266,17 +272,17 @@ export default function CompanyStatusDialog({
                     <div className="mt-4">
                         <label className="block text-right text-sm font-medium text-gray-600 mb-1">{reasonLabel}</label>
                         <div className="relative">
-              <textarea
-                  value={reason}
-                  onChange={(e) => {
-                      setReason(e.target.value);
-                      if (inputError) setInputError("");
-                  }}
-                  rows={4}
-                  maxLength={1000}
-                  className={`w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 text-right text-lg ${focusColor}`}
-                  placeholder={reasonPlaceholder}
-              />
+                            <textarea
+                                value={reason}
+                                onChange={(e) => {
+                                    setReason(e.target.value);
+                                    if (inputError) setInputError("");
+                                }}
+                                rows={4}
+                                maxLength={1000}
+                                className={`w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 text-right text-lg ${focusColor}`}
+                                placeholder={reasonPlaceholder}
+                            />
                             <span className="absolute bottom-4 left-4 text-xs text-gray-400">{reason.length}/1000</span>
                         </div>
                         {inputError && <p className="text-red-500 text-sm mt-2 text-right">{inputError}</p>}
@@ -287,7 +293,7 @@ export default function CompanyStatusDialog({
                     <button
                         onClick={handleConfirm}
                         disabled={!isConfirmEnabled}
-                        className={`w-full py-4 rounded-full text-white font-semibold transition-colors flex items-center justify-center text-lg ${isConfirmEnabled ? `${buttonColor} cursor-pointer`  : `${buttonColor} cursor-not-allowed`} `}
+                        className={`w-full py-4 rounded-full text-white font-semibold transition-colors flex items-center justify-center text-lg ${isConfirmEnabled ? `${buttonColor} cursor-pointer` : `${buttonColor} cursor-not-allowed`} `}
                     >
                         {buttonText}
                     </button>

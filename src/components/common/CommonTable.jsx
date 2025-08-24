@@ -39,6 +39,7 @@ const CommonTable = ({
             case "منتهية":
             case "نشط":
             case "مقبول":
+            case "فعالة":
                 icon = doneIcon;
                 bg = "bg-green-100/60";
                 text = "text-green";
@@ -62,6 +63,7 @@ const CommonTable = ({
                 text = "text-gold";
                 break;
             case "حظر مؤقت":
+            case "تم الانذار":
                 icon = Warning;
                 bg = "bg-gold-500/10";
                 text = "text-gold";

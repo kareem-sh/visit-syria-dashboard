@@ -3,13 +3,18 @@ import React from "react";
 import { ChevronLeft } from "lucide-react";
 import CompanyProfile from "@/assets/icons/company/Company Profile.svg";
 import Request from "@/assets/images/Request.png";
+import GoldenCircularProgress from "@/components/common/GoldCircularProgress.jsx"
 
-export default function RequestsList({ requests, selectedRequest, onSelectRequest }) {
+export default function RequestsList({ requests, selectedRequest, onSelectRequest, isLoading }) {
     const isEmpty = !requests || requests.length === 0;
 
     return (
         <div className="bg-white rounded-lg shadow-md h-full flex pt-4 flex-col max-h-[90vh]">
-            {isEmpty ? (
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full p-6 gap-6">
+                    <GoldenCircularProgress color="#10b981" /> {/* Emerald-450 color */}
+                </div>
+            ) : isEmpty ? (
                 // Empty state
                 <div className="flex flex-col items-center justify-center h-full p-6 gap-6">
                     <img
@@ -25,7 +30,7 @@ export default function RequestsList({ requests, selectedRequest, onSelectReques
                 // Requests list
                 <ul className="overflow-y-auto flex-grow space-y-4 pb-4">
                     {requests.map((request, idx) => {
-                        const isSelected = selectedRequest?.license_number === request.license_number;
+                        const isSelected = selectedRequest?.id === request.id;
                         return (
                             <li
                                 key={idx}
@@ -42,6 +47,10 @@ export default function RequestsList({ requests, selectedRequest, onSelectReques
                                             src={request.image ?? CompanyProfile}
                                             alt={request.name_of_company}
                                             className={`w-16 h-16 rounded-full`}
+                                            onError={(e) => {
+                                                // If image fails to load, use fallback
+                                                e.target.src = CompanyProfile;
+                                            }}
                                         />
                                     </div>
                                     <div>

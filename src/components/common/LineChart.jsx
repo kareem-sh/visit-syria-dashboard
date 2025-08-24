@@ -37,7 +37,9 @@ export default function LineChart({
     "ديسمبر",
   ],
   height = "31.25rem",
-  label = 'مقدار الارباح'
+  label = 'مقدار الارباح',
+  tooltip_text = 'الأرباح'
+
 }) {
   const data = {
     labels,
@@ -97,7 +99,7 @@ export default function LineChart({
       },
       tooltip: {
         callbacks: {
-          label: (tooltipItem) => `الأرباح: ${tooltipItem.raw}`,
+          label: (tooltipItem) => `${tooltip_text}: ${tooltipItem.raw}`,
         },
       },
     },

@@ -11,12 +11,12 @@ import CompanyProfile from "@/assets/images/Company Profile.svg";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import Decline from "@/assets/icons/common/decline.svg";
 import Approve from "@/assets/icons/common/approve.svg";
-import { changeCompanyStatus } from "@/services/companies/companiesApi"; // Import the API function
+import { changeCompanyStatus } from "@/services/companies/companiesApi";
 
 export default function CompanyDialog({
                                           open,
                                           onClose,
-                                          mode = "create", // 'create' | 'view'
+                                          mode = "create",
                                           initialData = {},
                                           onAdd,
                                           onAccept,
@@ -40,7 +40,6 @@ export default function CompanyDialog({
     const [showRejectDialog, setShowRejectDialog] = useState(false);
     const [isChangingStatus, setIsChangingStatus] = useState(false);
 
-    // Create a stable initial data reference
     const initialDataRef = React.useRef(initialData);
 
     useEffect(() => {
@@ -95,12 +94,58 @@ export default function CompanyDialog({
                 longitude: data.longitude || null,
                 image: data.image || null,
             });
-            setLogoPreview(data.image || null);
+
+            // Set logo preview - handle both URLs (view mode) and File objects (create mode)
+            if (data.image) {
+                if (typeof data.image === 'string') {
+                    // URL from server (view mode)
+                    setLogoPreview(data.image);
+                } else if (data.image instanceof File) {
+                    // File object (create mode)
+                    setLogoPreview(URL.createObjectURL(data.image));
+                }
+            } else {
+                setLogoPreview(null);
+            }
         } else {
             // Reset form when dialog closes to ensure it's fresh next time
             resetForm();
         }
     }, [open, resetForm, isViewMode]);
+
+    // Clean up object URLs when component unmounts
+    useEffect(() => {
+        return () => {
+            // Revoke any object URLs to prevent memory leaks
+            if (logoPreview && logoPreview.startsWith('blob:')) {
+                URL.revokeObjectURL(logoPreview);
+            }
+
+            formData.documents.forEach(doc => {
+                if (doc.url && doc.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(doc.url);
+                }
+                if (doc.preview && doc.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(doc.preview);
+                }
+            });
+        };
+    }, []);
+
+    // Format date to remove time portion (YYYY-MM-DD)
+    const formatDateWithoutTime = (dateString) => {
+        if (!dateString) return '';
+
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+
+            return date.toISOString().split('T')[0];
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return dateString;
+        }
+    };
 
     // Get today's date in YYYY-MM-DD format for date input max value
     const getTodayDate = () => {
@@ -123,6 +168,12 @@ export default function CompanyDialog({
 
     const handleRemoveLogo = () => {
         setFormData(prev => ({ ...prev, image: null }));
+
+        // Revoke the object URL if it's a blob URL
+        if (logoPreview && logoPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(logoPreview);
+        }
+
         setLogoPreview(null);
         const fileInput = document.getElementById('logo-input');
         if (fileInput) fileInput.value = "";
@@ -168,8 +219,12 @@ export default function CompanyDialog({
         setFormData(prev => {
             const newDocs = [...prev.documents];
             // Revoke the object URL to avoid memory leaks if it's an image
-            if (newDocs[index].url) {
-                URL.revokeObjectURL(newDocs[index].url);
+            const docToRemove = newDocs[index];
+            if (docToRemove.url && docToRemove.url.startsWith('blob:')) {
+                URL.revokeObjectURL(docToRemove.url);
+            }
+            if (docToRemove.preview && docToRemove.preview.startsWith('blob:')) {
+                URL.revokeObjectURL(docToRemove.preview);
             }
             newDocs.splice(index, 1);
             return { ...prev, documents: newDocs };
@@ -200,7 +255,7 @@ export default function CompanyDialog({
     };
 
     const handleLocationSelect = ({ display_name, lat, lon }) => {
-        setFormData(prev => ({ ...prev, place: display_name, latitude: lat, longitude: lon }));
+        setFormData(prev => ({ ...prev, location: display_name, latitude: lat, longitude: lon }));
         // Clear location error when location is selected
         if (errors.location) {
             setErrors(prev => ({ ...prev, location: null }));
@@ -259,7 +314,8 @@ export default function CompanyDialog({
 
         try {
             await changeCompanyStatus(initialData.id, 'accept');
-            toast.success("تم قبول الشركة بنجاح");
+            // Only show one toast message - remove the duplicate from onAccept callback
+            // toast.success("تم قبول الشركة بنجاح");
             onAccept && onAccept(initialData);
             onClose();
         } catch (error) {
@@ -275,7 +331,8 @@ export default function CompanyDialog({
 
         try {
             await changeCompanyStatus(initialData.id, 'reject', reason);
-            toast.success("تم رفض الشركة بنجاح");
+            // Only show one toast message - remove the duplicate from onDecline callback
+            // toast.success("تم رفض الشركة بنجاح");
             onDecline && onDecline({ ...initialData, rejectionReason: reason });
             onClose();
         } catch (error) {
@@ -390,9 +447,9 @@ export default function CompanyDialog({
                             <label className="block text-sm font-medium text-gray-700 mb-1">الوثائق*</label>
                             <div className="relative">
                                 <label role="filepicker" className={`${fieldClass(errors.documents)} flex items-center justify-between ${!isViewMode && !isLoading ? 'cursor-pointer' : 'cursor-default bg-gray-100'}`}>
-                                    <span className="text-sm text-gray-700">
-                                        {formData.documents.length > 0 ? `${formData.documents.length} ملفات مختارة` : "اختر المستندات والصور"}
-                                    </span>
+                  <span className="text-sm text-gray-700">
+                    {formData.documents.length > 0 ? `${formData.documents.length} ملفات مختارة` : "اختر المستندات والصور"}
+                  </span>
                                     <Paperclip size={18} className="text-gray-500"/>
                                     {!isViewMode && !isLoading && (
                                         <input
@@ -415,14 +472,27 @@ export default function CompanyDialog({
                                 <div className="mt-4">
                                     <div className="flex flex-wrap gap-2">
                                         {formData.documents.map((doc, index) => {
-                                            // Handle both string URLs and file objects
-                                            const docUrl = typeof doc === 'string' ? doc : doc.url;
-                                            const docName = typeof doc === 'string'
-                                                ? doc.split('/').pop()
-                                                : doc.name || 'ملف غير معروف';
+                                            // Get document URL based on mode
+                                            let docUrl = null;
+                                            let docName = "ملف غير معروف";
+                                            let isImage = false;
 
-                                            // Check if it's an image based on file extension
-                                            const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(docUrl || '');
+                                            if (typeof doc === 'string') {
+                                                // URL string from API (view mode)
+                                                docUrl = doc;
+                                                docName = doc.split('/').pop();
+                                                isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(doc);
+                                            } else if (doc.url) {
+                                                // Object with URL property
+                                                docUrl = doc.url;
+                                                docName = doc.name || docUrl.split('/').pop();
+                                                isImage = doc.type === 'image' || /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(docUrl);
+                                            } else if (doc.file) {
+                                                // File object from upload (create mode)
+                                                docUrl = doc.preview || URL.createObjectURL(doc.file);
+                                                docName = doc.name || doc.file.name;
+                                                isImage = doc.type === 'image' || doc.file.type.startsWith('image/');
+                                            }
 
                                             return (
                                                 <div
@@ -448,16 +518,16 @@ export default function CompanyDialog({
                                                             <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-2 hidden">
                                                                 <Paperclip size={24} className="text-gray-400 mb-1" />
                                                                 <span className="text-xs text-gray-600 text-center truncate w-full">
-                                                                    {docName}
-                                                                </span>
+                                  {docName}
+                                </span>
                                                             </div>
                                                         </>
                                                     ) : (
                                                         <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-2">
                                                             <Paperclip size={24} className="text-gray-400 mb-1" />
                                                             <span className="text-xs text-gray-600 text-center truncate w-full">
-                                                                {docName}
-                                                            </span>
+                                {docName}
+                              </span>
                                                         </div>
                                                     )}
 
@@ -496,7 +566,7 @@ export default function CompanyDialog({
                             ) : (
                                 <MapSearchPicker
                                     initialPosition={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : undefined}
-                                    initialPlace={formData.place}
+                                    initialPlace={formData.location}
                                     onSelect={handleLocationSelect}
                                     disabled={isViewMode || isLoading}
                                 />
@@ -552,7 +622,7 @@ export default function CompanyDialog({
                 cancelText="تراجع"
                 confirmColor="green"
                 isLoading={isChangingStatus}
-                requestDate={initialData.user?.created_at} // Use the actual creation date from API
+                requestDate={formatDateWithoutTime(initialData.user?.created_at)} // Format date without time
             />
 
             <ConfirmationDialog
@@ -569,7 +639,7 @@ export default function CompanyDialog({
                 textInputPlaceholder="يرجى كتابة أسباب الرفض"
                 requiredTextInput={true}
                 isLoading={isChangingStatus}
-                requestDate={initialData.user?.created_at} // Use the actual creation date from API
+                requestDate={formatDateWithoutTime(initialData.user?.created_at)} // Format date without time
             />
 
             {documentViewerOpen && (
@@ -595,6 +665,14 @@ export default function CompanyDialog({
                                 src={logoPreview}
                                 alt="Logo Preview"
                                 className="max-w-full max-h-full object-contain"
+                                onError={(e) => {
+                                    // If logo fails to load, show fallback
+                                    e.target.style.display = 'none';
+                                    const fallback = document.createElement('div');
+                                    fallback.className = 'text-white text-center';
+                                    fallback.innerHTML = '<p>تعذر تحميل الصورة</p>';
+                                    e.target.parentNode.appendChild(fallback);
+                                }}
                             />
                         </div>
                     </div>

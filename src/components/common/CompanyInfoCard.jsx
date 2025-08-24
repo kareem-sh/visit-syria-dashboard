@@ -19,7 +19,7 @@ export default function CompanyInfoCard({ data }) {
         id,
         name_of_owner,
         email,
-        place,
+        location,
         latitude,
         longitude,
         license_number,
@@ -36,7 +36,22 @@ export default function CompanyInfoCard({ data }) {
         setViewerOpen(true);
     };
 
-    // The rest of the component is identical to the previous 'CompanyDetails' component
+    // Safely format phone number with country code
+    const formatPhoneNumber = () => {
+        if (!phone) return "N/A";
+
+        let formattedPhone = phone;
+        if (country_code) {
+            // Remove any leading '+' from country_code if present, then add it back
+            const cleanCountryCode = country_code.startsWith('+')
+                ? country_code.slice(1)
+                : country_code;
+            formattedPhone = `${phone} ${cleanCountryCode}+ `;
+        }
+
+        return formattedPhone;
+    };
+
     return (
         <>
             <div className="bg-white p-6 rounded-2xl shadow-sm w-full" dir="rtl">
@@ -50,7 +65,7 @@ export default function CompanyInfoCard({ data }) {
                         {position && (
                             <div className="mt-2">
                                 <h2 className="text-body-bold-16 text-(--text-title) pb-1">الموقع</h2>
-                                <p className="text-(--text-paragraph) pb-3">{place}</p>
+                                <p className="text-(--text-paragraph) pb-3">{location}</p>
                                 <div className="rounded-xl overflow-hidden ">
                                     <Map position={position} width="100%" height={220} />
                                 </div>
@@ -61,7 +76,7 @@ export default function CompanyInfoCard({ data }) {
                     {/* === Left Column (in RTL) === */}
                     <div className="flex flex-col gap-y-4">
                         <InfoItem label="رقم الترخيص" value={license_number} />
-                        <InfoItem label="رقم الهاتف" value={`${phone} ${country_code.slice(1)}+`} />
+                        <InfoItem label="رقم الهاتف" value={formatPhoneNumber()} />
                         <InfoItem label="الوصف" value={description} />
 
                         {documents.length > 0 && (
@@ -90,10 +105,9 @@ export default function CompanyInfoCard({ data }) {
     );
 }
 
-
 /* === Helper Components (InfoItem, DocumentItem) === */
 function InfoItem({ label, value }) {
-    if (!value) return null;
+    if (value === undefined || value === null || value === "") return null;
     return (
         <div>
             <p className="text-body-bold-16 text-(--text-title) pb-1">{label}</p>
@@ -103,10 +117,10 @@ function InfoItem({ label, value }) {
 }
 
 function DocumentItem({ doc, onClick }) {
-    const isImage = doc.type === 'image' && doc.url;
+    const isImage = true
     return (
         <div onClick={onClick} className="relative w-20 aspect-square border border-grey-300 rounded-xl overflow-hidden group cursor-pointer">
-            {isImage ? (<img src={doc.url} alt={doc.name} className="w-full h-full object-cover"/>)
+            {isImage ? (<img src={doc} alt={doc.name} className="w-full h-full object-cover"/>)
                 : ( <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-2"><Paperclip size={24} className="text-gray-400 mb-1" /><span className="text-xs text-gray-600 text-center truncate w-full">{doc.name}</span></div>)}
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Eye size={24} className="text-white" /></div>
         </div>
