@@ -16,7 +16,7 @@ export default function SupportForm({
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        category: "all",
+        category: "appandadmin",
     });
 
     const [errors, setErrors] = useState({});
@@ -27,10 +27,10 @@ export default function SupportForm({
                 setFormData({
                     title: initialData.title || "",
                     description: initialData.description || initialData.content || "",
-                    category: initialData.category || "all",
+                    category: initialData.category || "appandadmin",
                 });
             } else {
-                setFormData({ title: "", description: "", category: "all" });
+                setFormData({ title: "", description: "", category: "appandadmin" });
                 setErrors({});
             }
         }
@@ -116,9 +116,9 @@ export default function SupportForm({
                                 onChange={handleChange}
                                 className="p-3 border rounded-xl w-full border-gray-300 focus:ring-2 focus:ring-green"
                             >
-                                <option value="all">الكل</option>
-                                <option value="user">تطبيق المستخدمين</option>
-                                <option value="tourism">لوحة شركات السياحة</option>
+                                <option value="appandadmin">الكل</option>
+                                <option value="app">تطبيق المستخدمين</option>
+                                <option value="admin">لوحة شركات السياحة</option>
                             </select>
                         </div>
                     </div>

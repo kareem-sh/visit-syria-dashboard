@@ -13,15 +13,22 @@ export const useEvent = (eventId) => {
         // Search in events cache
         if (eventsCache) {
             const event = eventsCache.find(e => e.id === parseInt(id));
-            if (event) return event;
+            if (event) {
+                console.log('✅ Found event in events cache');
+                return event;
+            }
         }
 
         // Search in user events cache
         if (userEventsCache && userEventsCache.events) {
             const event = userEventsCache.events.find(e => e.id === parseInt(id));
-            if (event) return event;
+            if (event) {
+                console.log('✅ Found event in userEvents cache');
+                return event;
+            }
         }
 
+        console.log('❌ Event not found in any cache');
         return null;
     };
 
@@ -30,12 +37,13 @@ export const useEvent = (eventId) => {
         queryFn: async () => {
             const cachedEvent = findEventInAllCaches(eventId);
             if (cachedEvent) {
-                console.log('✅ Using cached event data');
+                console.log('✅ Using cached event data:', cachedEvent);
                 return cachedEvent;
             }
 
-            console.log('🔄 Fetching event details from API');
+            console.log('🔄 Fetching event details from API for id:', eventId);
             const event = await getEventById(eventId);
+            console.log('📥 API response for event:', event);
 
             // Add to appropriate cache based on which one exists
             const eventsCache = queryClient.getQueryData(['events']);
@@ -44,11 +52,14 @@ export const useEvent = (eventId) => {
             if (eventsCache) {
                 const existingIndex = eventsCache.findIndex(e => e.id === event.id);
                 if (existingIndex === -1) {
+                    console.log('📥 Adding event to events cache');
                     eventsCache.push(event);
+                    queryClient.setQueryData(['events'], eventsCache);
                 } else {
+                    console.log('🔄 Updating existing event in events cache');
                     eventsCache[existingIndex] = { ...eventsCache[existingIndex], ...event };
+                    queryClient.setQueryData(['events'], eventsCache);
                 }
-                queryClient.setQueryData(['events'], eventsCache);
             }
 
             return event;

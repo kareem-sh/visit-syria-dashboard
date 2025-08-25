@@ -88,11 +88,12 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
     const [place, setPlace] = useState(initialData.place || "");
     const [markerPosition, setMarkerPosition] = useState(defaultPos);
     const [locationSuggestions, setLocationSuggestions] = useState([]);
+
     /**
-     * images: array of objects:
-     * { file: File | null, url: string | null, preview: string | null }
-     * - For existing images: url (original), preview = url, file may be set after fetching blob
-     * - For newly selected images: file is File, preview is blob: URL
+     * images structure:
+     * { file: File | null, url: string | null, preview: string, isExisting: boolean }
+     * - existing images from backend: isExisting: true, file: null, url: <string>, preview: url
+     * - newly uploaded images:   isExisting: false, file: File, url: null, preview: blob:
      */
     const [images, setImages] = useState([]);
     const [errors, setErrors] = useState({});
@@ -117,33 +118,22 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
         setLocationSuggestions([]);
         setIsSearching(false);
 
-        // Normalize initialData.images to up-to-MAX_IMAGES items.
-        // Accept initialData.images as an array of { url } or strings (urls).
-        async function loadOldImages() {
-            const raw = (initialData.images || []).slice(0, MAX_IMAGES);
-            const converted = await Promise.all(
-                raw.map(async (entry) => {
-                    const url = typeof entry === "string" ? entry : entry?.url || entry?.preview || null;
-                    if (!url) return null;
-                    try {
-                        // try fetch the image and create a File so it can be re-uploaded as a File
-                        const res = await fetch(url);
-                        const blob = await res.blob();
-                        const filename = url.split("/").pop().split("?")[0] || `image.${blob.type.split("/")[1] || "jpg"}`;
-                        const file = new File([blob], filename, { type: blob.type });
-                        return { file, url, preview: url };
-                    } catch (err) {
-                        // If fetch fails, still keep preview as url but file null.
-                        // We'll attempt to convert url->File on Save.
-                        return { file: null, url, preview: url };
-                    }
-                })
-            );
-            // filter out any null entries and set state
-            setImages(converted.filter(Boolean));
-        }
-        loadOldImages();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // Normalize initialData.images into preview objects and mark them as existing
+        const raw = (initialData.images || []).slice(0, MAX_IMAGES);
+        const normalized = raw
+            .map((entry) => {
+                const url = typeof entry === "string" ? entry : entry?.url || entry?.preview;
+                if (!url) return null;
+                return {
+                    file: null,
+                    url,
+                    preview: url,
+                    isExisting: true,
+                };
+            })
+            .filter(Boolean);
+
+        setImages(normalized);
     }, [isOpen, initialData]);
 
     const revokePreviewIfBlob = (preview) => {
@@ -166,6 +156,7 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
             file,
             url: null,
             preview: URL.createObjectURL(file),
+            isExisting: false,
         }));
         setImages((prev) => [...prev, ...withPreviews]);
 
@@ -178,9 +169,7 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
         setImages((prev) => {
             const clone = [...prev];
             const removed = clone.splice(index, 1)[0];
-            if (removed?.preview && removed.preview.startsWith("blob:")) {
-                revokePreviewIfBlob(removed.preview);
-            }
+            revokePreviewIfBlob(removed?.preview);
             return clone;
         });
     };
@@ -194,7 +183,6 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
             return;
         }
         setIsSearching(true);
-        // debounce simple implementation
         const timer = setTimeout(async () => {
             try {
                 const res = await fetch(
@@ -234,50 +222,36 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
         return Object.keys(newErrors).length === 0;
     };
 
-    // Ensure all images have File objects before sending.
-    // If some existing images couldn't be fetched earlier (file === null) we'll attempt to fetch here.
-    async function ensureAllImagesHaveFiles(currentImages) {
-        const results = await Promise.all(
-            currentImages.map(async (img) => {
-                if (img.file instanceof File) return img;
-                if (img.url) {
-                    try {
-                        const res = await fetch(img.url);
-                        const blob = await res.blob();
-                        const filename = img.url.split("/").pop().split("?")[0] || `image.${blob.type.split("/")[1] || "jpg"}`;
-                        const file = new File([blob], filename, { type: blob.type });
-                        return { ...img, file };
-                    } catch (err) {
-                        // If fetch fails, omit this image (do not send it).
-                        // Returning null will filter it out later.
-                        return null;
-                    }
-                }
-                // no file and no url -> skip
-                return null;
-            })
-        );
-        return results.filter(Boolean);
-    }
-
+    // Build and send payload: old_images[] (URLs of existing images to keep),
+    // and images[] (File objects for new uploads)
     const handleSave = async (e) => {
         e?.preventDefault?.();
         if (!validate()) return;
 
         try {
             setIsSaving(true);
-            // Make sure any remaining entries with url (but no file) are converted to files now
-            const normalized = await ensureAllImagesHaveFiles(images);
-            // Now create payload images array of File objects
-            const filesToSend = normalized.map((it) => it.file).filter(Boolean);
+
+            // remaining existing image URLs that user didn't delete
+            const oldImagesUrls = images
+                .filter((it) => it.isExisting && it.url)
+                .map((it) => it.url);
+
+            // new images (files) to upload
+            const newFiles = images
+                .filter((it) => !it.isExisting && it.file instanceof File)
+                .map((it) => it.file);
+
+            // prepare payload object (eventsApi.updateEvent will convert to FormData)
             const payload = {
                 name: name.trim(),
                 description: description.trim(),
                 place: place.trim(),
                 latitude: markerPosition[0],
                 longitude: markerPosition[1],
-                images: filesToSend, // send only visible images as Files
+                old_images: oldImagesUrls, // array of urls
+                images: newFiles, // array of File objects
             };
+
             await onSave(payload);
             setIsSaving(false);
             onClose();
@@ -296,19 +270,35 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-99999" onClick={onClose}>
-            <div className="bg-[#f7f7f7] rounded-2xl w-full max-w-4xl p-6 relative overflow-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()} dir="rtl">
-                <button className="absolute top-4 left-4 text-gray-500 hover:text-gray-700" onClick={onClose}><XIcon/></button>
+            <div
+                className="bg-[#f7f7f7] rounded-2xl w-full max-w-4xl p-6 relative overflow-auto max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+                dir="rtl"
+            >
+                <button className="absolute top-4 left-4 text-gray-500 hover:text-gray-700" onClick={onClose}>
+                    <XIcon />
+                </button>
                 <h2 className="text-2xl font-bold text-green mb-4 text-right">تعديل الحدث</h2>
 
                 <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm mb-1 text-gray-700">اسم الحدث</label>
-                        <input value={name} onChange={(e)=>setName(e.target.value)} className={fieldClass(errors.name)} placeholder="اكتب اسم الحدث"/>
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className={fieldClass(errors.name)}
+                            placeholder="اكتب اسم الحدث"
+                        />
                         {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
                     </div>
                     <div>
                         <label className="block mb-1 text-sm text-gray-700">الوصف</label>
-                        <textarea value={description} onChange={(e)=>setDescription(e.target.value)} className={`${fieldClass(errors.description)} h-28 resize-none`} placeholder="اكتب وصف الحدث"/>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className={`${fieldClass(errors.description)} h-28 resize-none`}
+                            placeholder="اكتب وصف الحدث"
+                        />
                         {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                     </div>
 
@@ -322,7 +312,6 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
                                 value={place}
                                 onChange={(e) => {
                                     setPlace(e.target.value);
-                                    // use simple debounce pattern
                                     if (doSearch) doSearch(e.target.value);
                                 }}
                                 className={fieldClass(errors.place)}
@@ -344,13 +333,15 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
                         <div className="relative z-10 h-48 rounded-2xl overflow-hidden mt-2">
                             <MapContainer center={markerPosition} zoom={15} style={{ height: "100%", width: "100%" }}>
                                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                <Marker position={markerPosition}/>
-                                <MapUpdater position={markerPosition}/>
-                                <MapClickHandler onClick={async(coords)=>{
-                                    setMarkerPosition(coords);
-                                    const nameResp = await reverseGeocode(coords[0], coords[1]);
-                                    setPlace(nameResp);
-                                }}/>
+                                <Marker position={markerPosition} />
+                                <MapUpdater position={markerPosition} />
+                                <MapClickHandler
+                                    onClick={async (coords) => {
+                                        setMarkerPosition(coords);
+                                        const nameResp = await reverseGeocode(coords[0], coords[1]);
+                                        setPlace(nameResp);
+                                    }}
+                                />
                             </MapContainer>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">اضغط على الخريطة لتعيين الموقع</p>
@@ -358,15 +349,33 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
 
                     <div>
                         <label className="block text-sm text-gray-700 mb-1">الصور</label>
-                        <input type="file" multiple disabled={images.length>=MAX_IMAGES} ref={fileInputRef} onChange={handleImageChange} className={fieldClass(false)} />
+                        <input
+                            type="file"
+                            multiple
+                            disabled={images.length >= MAX_IMAGES}
+                            ref={fileInputRef}
+                            onChange={handleImageChange}
+                            className={fieldClass(false)}
+                        />
                         {uploadWarning && <p className="text-yellow-600 text-sm mt-1">{uploadWarning}</p>}
                         <div className="mt-2 grid grid-cols-4 gap-2">
                             {images.map((img, idx) => (
-                                <div key={idx} className="relative aspect-square border rounded-xl overflow-hidden group">
-                                    <img src={img.preview || img.url} className="object-cover w-full h-full" alt={`img-${idx}`}/>
+                                <div
+                                    key={idx}
+                                    className="relative aspect-square border rounded-xl overflow-hidden group"
+                                >
+                                    <img
+                                        src={img.preview}
+                                        className="object-cover w-full h-full"
+                                        alt={`img-${idx}`}
+                                    />
                                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-black/40 flex items-center justify-center">
-                                        <button type="button" onClick={() => removeImage(idx)} className="p-2 bg-red-500 rounded-full text-white">
-                                            <Trash2 size={16}/>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(idx)}
+                                            className="p-2 bg-red-500 rounded-full text-white"
+                                        >
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </div>
@@ -376,8 +385,13 @@ export default function EventEditDialog({ isOpen, onClose, onSave, initialData =
                     </div>
 
                     <div className="col-span-2 mt-2">
-                        <button type="submit" disabled={isSaving} className="w-full flex gap-2 justify-center items-center rounded-full bg-green px-6 py-3 text-white disabled:opacity-50">
-                            <img src={pen} className="w-4 h-4" alt=""/> {isSaving ? "جاري الحفظ..." : "تعديل"}
+                        <button
+                            type="submit"
+                            disabled={isSaving}
+                            className="w-full flex gap-2 justify-center items-center rounded-full bg-green px-6 py-3 text-white disabled:opacity-50"
+                        >
+                            <img src={pen} className="w-4 h-4" alt="" />{" "}
+                            {isSaving ? "جاري الحفظ..." : "تعديل"}
                         </button>
                     </div>
                 </form>

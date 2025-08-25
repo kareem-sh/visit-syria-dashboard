@@ -71,7 +71,7 @@ const FeedbackCard = ({ feedback }) => {
 const FeedBackList = ({ selectedOption }) => {
     // Use React Query to fetch data based on category
     const { data: feedbackData, isLoading, error } = useQuery({
-        queryKey: ['supports', selectedOption],
+        queryKey: ['feedback', selectedOption],
         queryFn: () => getSupportsByCategory(selectedOption === 'tourism' ? 'admin' : 'app'),
         enabled: !!selectedOption, // Only run query when selectedOption is truthy
     });

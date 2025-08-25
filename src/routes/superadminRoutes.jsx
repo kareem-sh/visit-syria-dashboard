@@ -25,6 +25,7 @@ import SupportDetails from "@/pages/superadmin/support/Support_details.jsx";
 import SendNotifications from "@/pages/superadmin/notifications/send_notifications.jsx";
 import Feedback from "@/pages/superadmin/feedback/feedback.jsx";
 import ContactUs from "@/pages/superadmin/contact-us/ContactUs.jsx";
+import AdminDashboardOverview from "@/pages/company/DashboardOverview.jsx"; // remove later
 
 const superadminRoutes = [
     { path: "/", element: <DashboardOverview /> },
@@ -55,6 +56,7 @@ const superadminRoutes = [
     { path: "/notifications/", element: <SendNotifications /> },
     { path: "/feedback/", element: <Feedback /> },
     { path: "/contact-us/", element: <ContactUs /> },
+    { path: "/admin", element: <AdminDashboardOverview /> }, //remove it later remember
 
 ];
 

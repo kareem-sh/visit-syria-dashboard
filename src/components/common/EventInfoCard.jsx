@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CancelDialog from "@/components/Dialog/CancelDialog.jsx";
 import ActionSuccessDialog from "@/components/Dialog/ActionSuccessDialog.jsx";
@@ -32,6 +32,11 @@ export default function EventInfoCard(props) {
 
     const navigate = useNavigate();
     const [status, setStatus] = useState(initialStatus);
+
+    // 🔄 Sync local state whenever prop changes
+    useEffect(() => {
+        setStatus(initialStatus);
+    }, [initialStatus]);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogTitle, setDialogTitle] = useState("");

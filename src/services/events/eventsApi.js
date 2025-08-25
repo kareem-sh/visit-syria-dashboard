@@ -41,6 +41,7 @@ export const getEvents = async () => {
         ticket_price: event.price_type === "free" ? "مجاني" : `${event.price} $`,
     }));
 };
+
 // Create a new event
 export const createEvent = async (formData) => {
     try {
@@ -48,9 +49,9 @@ export const createEvent = async (formData) => {
 
         // Append all fields
         Object.entries(formData).forEach(([key, value]) => {
-            if (key === "images") {
+            if (key === "images" && Array.isArray(value)) {
                 value.forEach((img, index) => {
-                    data.append(`images[${index}]`, img);
+                    data.append(`images[]`, img);
                 });
             } else {
                 data.append(key, value);
@@ -124,21 +125,21 @@ export const eventBookings = async (eventId) => {
     }
 };
 
-
-
 // Get single event by id (do NOT modify media URLs)
 export const getEventById = async (id) => {
     try {
+        console.log(`🌐 Fetching event with id: ${id}`);
         const res = await apiClient.get(`/events/${id}`);
         const event = res?.data?.data ?? res?.data;
 
         if (!event) {
-            console.error("Event not found or invalid response:", res);
+            console.error("❌ Event not found or invalid response:", res);
             return null;
         }
 
         // Use the media exactly as returned by the API
         const media = event.media ?? [];
+        console.log(`✅ Event ${id} fetched successfully, media count:`, media.length);
 
         return {
             id: event.id,
@@ -158,12 +159,15 @@ export const getEventById = async (id) => {
             price_type: event.price_type,
             pre_booking: event.pre_booking,
             is_saved: event.is_saved,
-            media, // now defined
+            media,
             status: event.status,
             raw: event,
         };
     } catch (err) {
-        console.error("Error fetching event:", err.response?.data ?? err);
+        console.error("❌ Error fetching event:", err);
+        if (err.response) {
+            console.error("🚨 Error response:", err.response.data);
+        }
         throw err;
     }
 };
@@ -190,30 +194,58 @@ export const deleteEvent = async (id) => {
     }
 };
 
-
 export const updateEvent = async (id, formDataObj = {}) => {
     try {
+        console.log("🔄 updateEvent called with id:", id);
+        console.log("📦 FormData object:", formDataObj);
+
         const data = new FormData();
 
-        // Append all fields (mirror createEvent)
+        // Append scalar fields (not arrays of files/urls)
         Object.entries(formDataObj).forEach(([key, value]) => {
             if (key === "images" && Array.isArray(value)) {
-                value.forEach((img, index) => {
-                    data.append(`images[${index}]`, img);
+                // append Files as images[]
+                value.forEach((file) => {
+                    if (file instanceof File) {
+                        data.append("images[]", file);
+                    }
                 });
-            } else if (value !== undefined && value !== null) {
+            } else if (key === "old_images" && Array.isArray(value)) {
+                // append existing image URLs as old_images[]
+                value.forEach((url) => {
+                    if (url !== undefined && url !== null) {
+                        data.append("old_images[]", url);
+                    }
+                });
+            } else if (value !== undefined && value !== null && !Array.isArray(value)) {
+                // scalar values
                 data.append(key, value);
+            } else if (Array.isArray(value)) {
+                // fallback: append array as JSON string (for unexpected arrays)
+                data.append(key, JSON.stringify(value));
             }
         });
 
-        // POST to the update endpoint (backend expects POST)
+        // Log all FormData entries before sending (helpful for debugging)
+        console.log("📤 Final FormData being sent:");
+        for (let [key, value] of data.entries()) {
+            console.log(`${key}:`, value);
+        }
+
+        // POST to the update endpoint (backend expects multipart/form-data)
+        console.log(`🌐 Sending POST to /updateEvent/${id}`);
         const res = await apiClient.post(`/updateEvent/${id}`, data, {
             headers: { "Content-Type": "multipart/form-data" },
         });
 
+        console.log("✅ API Response received:", res.data);
         return res.data;
     } catch (err) {
-        console.error("Error updating event:", err.response?.data || err);
+        console.error("❌ Error updating event:", err);
+        if (err.response) {
+            console.error("🚨 Error response:", err.response.data);
+            console.error("🚨 Error status:", err.response.status);
+        }
         throw err;
     }
 };
