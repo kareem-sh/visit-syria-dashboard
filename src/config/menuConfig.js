@@ -25,7 +25,7 @@ export const sidebarMenu = [
     to: "/",
     icon: dashboardIcon,
     iconActive: dashboardIconActive,
-    roles: ["superadmin", "company"],
+    roles: ["superadmin", "admin"],
   },
   {
     label: "الشركات",
@@ -53,7 +53,7 @@ export const sidebarMenu = [
     to: "/places",
     icon: placesIcon,
     iconActive: placesIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","admin"],
   },
   {
     label: "المجتمع",
@@ -74,7 +74,7 @@ export const sidebarMenu = [
     to: "/support",
     icon: supportIcon,
     iconActive: supportIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","admin"],
   },
   {
     label: "إدارة الإشعارات",

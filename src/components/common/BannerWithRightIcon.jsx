@@ -17,6 +17,8 @@ function BannerWithRightIcon({
 }) {
     const navigate = useNavigate();
 
+    const isFAQ = title !== "الأسئلة الشائعة";
+
     const handleButtonClick = () => {
         if (navigateTo) {
             navigate(navigateTo);
@@ -59,7 +61,7 @@ function BannerWithRightIcon({
                                 className="w-[32px] h-[32px] flex-shrink-0 object-contain"
                             />
                             <p className="text-body-regular-18-auto opacity-90">
-                                {p} شروط
+                                {p} {isFAQ ? "شروط" : "سؤال"}
                             </p>
                         </div>
                         
@@ -71,7 +73,7 @@ function BannerWithRightIcon({
                                 className="w-[32px] h-[32px] flex-shrink-0 object-contain"
                             />
                             <p className="text-body-regular-18-auto opacity-90">
-                                {p_comp} شروط
+                                {p_comp}{isFAQ ? "شروط" : "سؤال"}
                             </p>
                         </div>
                     </div>

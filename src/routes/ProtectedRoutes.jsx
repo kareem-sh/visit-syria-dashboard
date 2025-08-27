@@ -1,20 +1,28 @@
-import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
-const ProtectedRoute = ({ requiredRole, children }) => {
-    const { user, token } = useAuth();
+const ProtectedRoute = ({ user, requiredRole, children }) => {
+    const location = useLocation();
+    const { loading } = useAuth(); // ✅ get loading state
 
-    // Not logged in → redirect to home
-    if (!token || !user) {
+    if (loading) {
+        return <div>Loading...</div>; // ⏳ wait for AuthProvider to finish
+    }
+
+    if (!user) {
+        return <Navigate to="/login" replace state={{ from: location }} />;
+    }
+
+    // strict for superadmin only
+    if (requiredRole === "superadmin" && user.role !== "superadmin") {
         return <Navigate to="/" replace />;
     }
 
-    // Logged in but role mismatch → redirect to home
-    if (requiredRole && user.role !== requiredRole) {
-        return <Navigate to="/" replace />;
+    // admin routes: allow both admin and pending user
+    if (requiredRole === "admin" && !["admin", "user"].includes(user.role)) {
+        return <Navigate to="/dashboard" replace />;
     }
 
-    // Authorized → render children
     return children;
 };
 

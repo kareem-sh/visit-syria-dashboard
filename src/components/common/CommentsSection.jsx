@@ -6,7 +6,9 @@ import UserProfileImage from "@/assets/images/User Profile.svg"
 const CommentsSection = ({ comments = [], status = null ,showRatings =true}) => {
     // Check if there are no comments
     const noComments = !comments || comments.length === 0;
-
+    const userImage = comments && comments.user
+        ? (comments.user.profile_photo ?? comments.user.user_avatar ?? UserProfileImage)
+        : UserProfileImage;
     return (
         <div className="card flex-1 overflow-y-auto flex flex-col gap-4 p-4">
             {status === "لم تبدأ بعد" || status === "تم الإلغاء" ? (
@@ -31,7 +33,7 @@ const CommentsSection = ({ comments = [], status = null ,showRatings =true}) => 
                         <div className="flex flex-col items-start flex-1">
                             <div className="flex items-center gap-2">
                                 <img
-                                    src={comment.user.profile_photo || comment.user_avatar || UserProfileImage}
+                                    src={userImage}
                                     alt="avatar"
                                     className="w-11 h-11 rounded-full object-cover"
                                 />
