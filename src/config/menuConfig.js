@@ -19,75 +19,92 @@ import feedbackIconActive from "@/assets/icons/sidebar/feedbackFill.svg";
 import notificationIcon from "@/assets/icons/sidebar/Notifications Stroke.svg";
 import notificationIconActive from "@/assets/icons/sidebar/Notiifcations Fill.svg";
 
+
 export const sidebarMenu = [
   {
     label: "لوحة التحكم",
     to: "/",
     icon: dashboardIcon,
     iconActive: dashboardIconActive,
-    roles: ["superadmin", "admin"],
+    roles: ["superadmin", "admin","super_admin",null],
   },
   {
     label: "الشركات",
     to: "/companies",
     icon: toursIcon,
     iconActive: toursIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "الأحداث",
     to: "/events",
     icon: eventIcon,
     iconActive: eventIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "المستخدمين",
     to: "/users",
     icon: userIcon,
     iconActive: userIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "الأماكن",
     to: "/places",
     icon: placesIcon,
     iconActive: placesIconActive,
-    roles: ["superadmin","admin"],
+    roles: ["superadmin","admin","super_admin",null],
   },
   {
     label: "المجتمع",
     to: "/community",
     icon: communityIcon,
     iconActive: communityIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "حول سوريا",
     to: "/about-syria",
     icon: syriaIcon,
     iconActive: syriaIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "الدعم اللوجستي",
     to: "/support",
     icon: supportIcon,
     iconActive: supportIconActive,
-    roles: ["superadmin","admin"],
+    roles: ["superadmin","admin","super_admin"],
   },
   {
     label: "إدارة الإشعارات",
     to: "/notifications",
     icon: notificationIcon,
     iconActive: notificationIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "الشكاوي والاقتراحات",
     to: "/feedback",
     icon: feedbackIcon,
     iconActive: feedbackIconActive,
-    roles: ["superadmin"],
+    roles: ["superadmin","super_admin"],
   },
+  {
+  label: "الدعم اللوجستي",
+    to: "/support/privacy_policy",
+    icon: supportIcon,
+    iconActive: supportIconActive,
+    roles: ["admin",null],
+ },
+  {
+    label: "الأسئلة الشائعة",
+    to: "/support/faq",
+    icon: supportIcon,
+    iconActive: supportIconActive,
+    roles: ["admin",null],
+  },
+
+
 ];

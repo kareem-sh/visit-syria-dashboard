@@ -1,7 +1,7 @@
 import AdminDashboardOverview from "@/pages/company/DashboardOverview.jsx";
 
 const adminRoutes = [
-    { path: "/dashboard", element: <AdminDashboardOverview /> },
+    { path: "/", element: <AdminDashboardOverview /> },
 
 ];
 

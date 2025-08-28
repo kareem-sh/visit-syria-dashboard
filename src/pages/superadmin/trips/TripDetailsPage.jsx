@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import ImageSection from "@/components/common/ImageSection";
 import CommentsSection from "@/components/common/CommentsSection";
 import TripInfoCard from "@/components/common/TripInfoCard.jsx";
 import DayDetails from "@/components/common/DayDetails";
-import { useTrip } from "@/hooks/useTrip"; // Import the custom hook
+import { getTripById } from "@/services/trips/trips"; // Import the API function directly
 
 // Lazy load the TripMap component
 const TripMap = React.lazy(() => import("@/components/common/TripMap"));
@@ -13,9 +14,29 @@ const TripDetailsPage = ({ type = "event" }) => {
     const { id } = useParams();
     const imageRef = useRef(null);
     const [imageHeight, setImageHeight] = useState(0);
+    const queryClient = useQueryClient();
 
-    // Use the custom hook
-    const { data: tripData, isLoading, error } = useTrip(id);
+    // Use React Query directly instead of the custom hook
+    const { data: tripData, isLoading, error, isFetching } = useQuery({
+        queryKey: ['trip', id],
+        queryFn: async () => {
+            console.time('Trip Details API Call');
+            try {
+                const trip = await getTripById(id);
+                console.timeEnd('Trip Details API Call');
+                return trip;
+            } catch (err) {
+                console.timeEnd('Trip Details API Call');
+                throw err;
+            }
+        },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
+        // Don't read from any other cache, always fetch from API
+        initialData: undefined,
+        // Prevent any cache sharing with trips list
+        structuralSharing: (oldData, newData) => newData,
+    });
 
     // Mock trip path data for testing (Damascus to Aleppo)
     const mockTripPath = {
@@ -44,10 +65,12 @@ const TripDetailsPage = ({ type = "event" }) => {
         return () => window.removeEventListener("resize", measure);
     }, [tripData?.images]);
 
-    if (isLoading) {
+    // Show loading state
+    if (isLoading || isFetching) {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green"></div>
+                <span className="ml-3">جاري تحميل بيانات الرحلة...</span>
             </div>
         );
     }
@@ -56,6 +79,12 @@ const TripDetailsPage = ({ type = "event" }) => {
         return (
             <div className="text-center p-10 text-red-500">
                 خطأ في تحميل البيانات: {error.message}
+                <button
+                    onClick={() => queryClient.refetchQueries({ queryKey: ['trip', id] })}
+                    className="block mt-4 mx-auto bg-green text-white px-4 py-2 rounded-md hover:bg-green-dark transition-colors"
+                >
+                    إعادة المحاولة
+                </button>
             </div>
         );
     }
@@ -91,7 +120,7 @@ const TripDetailsPage = ({ type = "event" }) => {
                         style={{ height: imageHeight, overflowY: "auto" }}
                     >
                         <h3 className="text-h1-bold-22 mb-2">التقييمات و التعليقات</h3>
-                        <CommentsSection comments={tripData.comments || []} status={tripData.status} />
+                        <CommentsSection comments={tripData.feedback || []} status={tripData.status} />
                     </div>
                 </div>
 

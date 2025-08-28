@@ -6,17 +6,27 @@ export const useTrip = (tripId) => {
     const queryClient = useQueryClient();
 
     const findTripInAllCaches = (id) => {
+        if (!id) return null;
+
+        const numericId = parseInt(id);
+        if (isNaN(numericId)) return null;
+
+        // Check individual trip cache first (separate from trips list)
+        const individualTripCache = queryClient.getQueryData(['trip', numericId]);
+        if (individualTripCache) return individualTripCache;
+
+        // Check main trips cache (read-only, won't modify it)
         const tripsCache = queryClient.getQueryData(['trips']);
-        if (tripsCache && tripsCache.trips) {
-            const trip = tripsCache.trips.find(t => t.id === parseInt(id));
+        if (tripsCache?.trips?.length) {
+            const trip = tripsCache.trips.find(t => t.id === numericId);
             if (trip) return trip;
         }
 
-        // Check user trips cache
+        // Check user trips cache (read-only)
         const userTripsCache = queryClient.getQueryData(['userTrips']);
-        if (userTripsCache && userTripsCache.activities) {
+        if (userTripsCache?.activities?.length) {
             for (const activity of userTripsCache.activities) {
-                if (activity.info.id === parseInt(id)) {
+                if (activity.info?.id === numericId) {
                     return activity.info;
                 }
             }
@@ -28,29 +38,27 @@ export const useTrip = (tripId) => {
     return useQuery({
         queryKey: ['trip', tripId],
         queryFn: async () => {
+            if (!tripId) throw new Error('No trip ID provided');
+
+            // First try to find in any cache
             const cachedTrip = findTripInAllCaches(tripId);
-            if (cachedTrip) return cachedTrip;
-
-            const trip = await getTripById(tripId);
-
-            // Add to main trips cache
-            const tripsCache = queryClient.getQueryData(['trips']) || { trips: [] };
-            const existingIndex = tripsCache.trips.findIndex(t => t.id === trip.id);
-
-            if (existingIndex === -1) {
-                tripsCache.trips.push(trip);
-            } else {
-                tripsCache.trips[existingIndex] = { ...tripsCache.trips[existingIndex], ...trip };
+            if (cachedTrip) {
+                console.log('Using cached trip data for ID:', tripId);
+                return cachedTrip;
             }
 
-            queryClient.setQueryData(['trips'], tripsCache);
+            // If not in cache, fetch from API
+            console.log('Fetching trip data from API for ID:', tripId);
+            const trip = await getTripById(tripId);
+
+            // Store ONLY in the individual trip cache, not in the trips list cache
+            // This prevents the trips list refresh from affecting individual trip data
+            queryClient.setQueryData(['trip', tripId], trip);
 
             return trip;
         },
         enabled: !!tripId,
-        staleTime: 5 * 60 * 1000,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        retry: 2, // Retry failed requests twice
     });
 };
-
-// Then use it in your components:
-// const { data: tripData, isLoading, error } = useTrip(id);

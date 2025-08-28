@@ -17,24 +17,15 @@ const UserTrips = () => {
         queryFn: async () => {
             const data = await getUserTrips(userId);
 
-            // Update individual trip caches for useTrip hook compatibility
+            // Store each trip in its own cache instead of modifying the main trips cache
             if (data && data.activities) {
                 data.activities.forEach(activity => {
                     if (activity.info) {
-                        // Pre-cache each trip for useTrip hook
-                        const tripsCache = queryClient.getQueryData(['trips']) || { trips: [] };
-                        const existingIndex = tripsCache.trips.findIndex(t => t.id === activity.info.id);
-
-                        if (existingIndex === -1) {
-                            tripsCache.trips.push(activity.info);
-                        } else {
-                            tripsCache.trips[existingIndex] = {
-                                ...tripsCache.trips[existingIndex],
-                                ...activity.info
-                            };
-                        }
-
-                        queryClient.setQueryData(['trips'], tripsCache);
+                        // Store each trip in its individual cache key
+                        queryClient.setQueryData(
+                            ['trip', activity.info.id],
+                            activity.info
+                        );
                     }
                 });
             }

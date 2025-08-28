@@ -2,40 +2,41 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebar } from "@/contexts/SidebarContext";
-import { sidebarMenu } from "../../config/menuConfig.js";
+import { sidebarMenu } from "@/config/menuConfig.js";
 import logo from "../../assets/images/logo.svg";
 import starLogo from "../../assets/icons/sidebar/Damascus Star Side bar.svg";
 import logoutIcon from "@/assets/icons/sidebar/logout.svg";
 import LogOutDialog from "@/components/dialog/LogOutDialog.jsx";
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
-  const { isSidebarOpen } = useSidebar();
+    const { user, logout, loading } = useAuth();
+    const { isSidebarOpen } = useSidebar();
 
-  // State to manage the visibility of the logout dialog
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+    // State to manage the visibility of the logout dialog
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Safety check if user is null
-  if (!user) return null;
+    // Safety check if user is null
+    if (!user) return null;
 
-  const isTabletOrSmaller = window.matchMedia("(max-width: 1024px)").matches;
+    const isTabletOrSmaller = window.matchMedia("(max-width: 1024px)").matches;
 
-  // Handler to open the dialog
-  const handleLogoutClick = () => {
-      setIsDialogOpen(true);
-  };
+    // Handler to open the dialog
+    const handleLogoutClick = () => {
+        setIsDialogOpen(true);
+    };
 
-  // Handler to confirm and perform the logout
-  const handleConfirmLogout = () => {
-      setIsDialogOpen(false); // Close the dialog
-  };
+    // Handler to confirm and perform the logout
+    const handleConfirmLogout = () => {
+        logout(); // Call the logout function from your AuthContext
+        setIsDialogOpen(false); // Close the dialog
+    };
 
-  // Handler to close the dialog without logging out
-  const handleCloseDialog = () => {
-      setIsDialogOpen(false);
-  };
+    // Handler to close the dialog without logging out
+    const handleCloseDialog = () => {
+        setIsDialogOpen(false);
+    };
 
-  return (
+    return (
         <>
             <aside
                 className={`fixed top-0 right-0 h-full z-50 transition-all duration-300 ${
@@ -98,8 +99,8 @@ const Sidebar = () => {
                                                                 : "text-body-regular-16"
                                                         }`}
                                                     >
-                                                        {item.label}
-                                                    </span>
+                            {item.label}
+                          </span>
                                                 )}
                                             </>
                                         )}
@@ -110,21 +111,22 @@ const Sidebar = () => {
 
                     {/* Logout Button */}
                     <button
-                        onClick={handleLogoutClick} // Change here
+                        onClick={handleLogoutClick}
+                        disabled={loading}
                         className={`h-12 flex items-center border-l-4 border-transparent hover:border-[var(--color-red)] transition-all duration-200 cursor-pointer ${
                             isSidebarOpen ? "pr-6 gap-2" : "justify-center"
-                        }`}
+                        } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         <img src={logoutIcon} alt="" className="w-5 h-5" />
                         {isSidebarOpen && (
                             <span className="text-body-regular-16-auto text-[var(--text-title)] flex-1 text-right">
-                                تسجيل الخروج
-                            </span>
+                {loading ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
+              </span>
                         )}
                     </button>
                 </div>
             </aside>
-            
+
             {/* The Logout Dialog */}
             <LogOutDialog
                 isOpen={isDialogOpen}
@@ -132,6 +134,7 @@ const Sidebar = () => {
                 onConfirm={handleConfirmLogout}
                 title="تسجيل الخروج"
                 message="هل أنت متأكد من أنك تريد تسجيل الخروج؟"
+                isLoading={loading}
             />
         </>
     );

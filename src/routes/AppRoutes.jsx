@@ -1,4 +1,3 @@
-// AppRoutes.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/routes/ProtectedRoutes.jsx";
@@ -11,11 +10,15 @@ import publicRoutes from "./publicRoutes";
 import DashboardPage from "@/pages/company/DashboardOverview.jsx";
 
 const AppRoutes = () => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    }
 
     // Helper: wrap route with ProtectedRoute
     const wrapProtected = (element, role) => (
-        <ProtectedRoute user={user} requiredRole={role}>
+        <ProtectedRoute requiredRole={role}>
             {element}
         </ProtectedRoute>
     );
@@ -41,11 +44,11 @@ const AppRoutes = () => {
                 <Route
                     key={`superadmin-${index}`}
                     path={route.path}
-                    element={wrapProtected(route.element, "superadmin")}
+                    element={wrapProtected(route.element, "super_admin")}
                 />
             ))}
 
-            {/* Admin Routes (includes pending users) */}
+            {/* Admin Routes (admin and super_admin) */}
             {adminRoutes.map((route, index) => (
                 <Route
                     key={`admin-${index}`}
@@ -54,7 +57,7 @@ const AppRoutes = () => {
                 />
             ))}
 
-            {/* Dashboard (both user + admin + superadmin) */}
+            {/* Dashboard (all authenticated users) */}
             <Route path="/dashboard" element={wrapProtected(<DashboardPage />)} />
 
             {/* Default Redirect */}

@@ -113,7 +113,7 @@ const DashboardOverview = () => {
                     showFilter={false}       // Managed by SortFilterButton above
                     showHeader={false}       // We have a custom header above
                     showSeeAll={true}        // Optional: link to a full ratings page
-                    basePath={"ratings"}    // Example path for "See All"
+                    basePath={"trips"}    // Example path for "See All"
                     entityType={"rating"}
                 />
             </div>

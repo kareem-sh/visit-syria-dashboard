@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { resetPassword } from "@/services/auth/AuthApi";
 import logo from "@/assets/images/logo.svg";
 
 // SVG icon for open eye (visible password)
@@ -41,11 +44,42 @@ const EyeClosedIcon = ({ size = 20, ...props }) => (
     </svg>
 );
 
-export default function ChangePasswordPage() {
+export default function ResetPasswordPage() {
     const [newPasswordVisible, setNewPasswordVisible] = useState(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [errors, setErrors] = useState({});
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Get email from navigation state
+    const { email = "", code = "" } = location.state || {};
+
+    // React Query mutation for reset password
+    const resetPasswordMutation = useMutation({
+        mutationFn: async (data) => {
+            // Build FormData
+            const form = new FormData();
+            form.append("email", data.email);
+            form.append("code", data.code);
+            form.append("new_password", data.new_password);
+            form.append("new_password_confirmation", data.new_password_confirmation);
+
+            return await resetPassword(form);
+        },
+        onSuccess: (data) => {
+            console.log("Password reset successful", data);
+            alert("تم تغيير كلمة المرور بنجاح!");
+
+            // Redirect to login page after successful password reset
+            navigate('/login');
+        },
+        onError: (error) => {
+            console.error("Password reset failed", error);
+            setErrors({ submit: "حدث خطأ يرجى المحاولة لاحقا" });
+        },
+    });
 
     const toggleNewPasswordVisibility = () => {
         setNewPasswordVisible(!newPasswordVisible);
@@ -57,12 +91,34 @@ export default function ChangePasswordPage() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Add password validation and change logic here
-        if (newPassword !== confirmPassword) {
-            alert("كلمات المرور غير متطابقة");
+
+        // Clear previous errors
+        setErrors({});
+
+        // Validation
+        if (!newPassword) {
+            setErrors({ newPassword: "كلمة المرور الجديدة مطلوبة" });
+            return;
+        } else if (newPassword.length < 8) {
+            setErrors({ newPassword: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" });
             return;
         }
-        alert("تم تغيير كلمة المرور بنجاح!");
+
+        if (!confirmPassword) {
+            setErrors({ confirmPassword: "تأكيد كلمة المرور مطلوب" });
+            return;
+        } else if (newPassword !== confirmPassword) {
+            setErrors({ confirmPassword: "كلمات المرور غير متطابقة" });
+            return;
+        }
+
+        // Call the reset password API
+        resetPasswordMutation.mutate({
+            email: email,
+            code: code,
+            new_password: newPassword,
+            new_password_confirmation: confirmPassword
+        });
     };
 
     return (
@@ -77,6 +133,12 @@ export default function ChangePasswordPage() {
                 <h2 className="text-center text-h1-bold-24 font-bold text-green">
                     تغيير كلمة المرور
                 </h2>
+
+                {errors.submit && (
+                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-right">
+                        {errors.submit}
+                    </div>
+                )}
 
                 {/* Password Change Form */}
                 <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -93,9 +155,16 @@ export default function ChangePasswordPage() {
                                 autoComplete="new-password"
                                 required
                                 value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setNewPassword(e.target.value);
+                                    if (errors.newPassword) {
+                                        setErrors({});
+                                    }
+                                }}
                                 placeholder="كلمة المرور الجديدة"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green focus:border-transparent text-left pr-10"
+                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green focus:border-transparent text-left pr-10 ${
+                                    errors.newPassword ? "border-red-500" : ""
+                                }`}
                             />
                             <button
                                 type="button"
@@ -110,6 +179,11 @@ export default function ChangePasswordPage() {
                                 )}
                             </button>
                         </div>
+                        {errors.newPassword && (
+                            <p className="text-red-500 text-sm text-right mt-1">
+                                {errors.newPassword}
+                            </p>
+                        )}
                     </div>
 
                     {/* Confirm New Password Input */}
@@ -125,9 +199,16 @@ export default function ChangePasswordPage() {
                                 autoComplete="new-password"
                                 required
                                 value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setConfirmPassword(e.target.value);
+                                    if (errors.confirmPassword) {
+                                        setErrors({});
+                                    }
+                                }}
                                 placeholder="تأكيد كلمة المرور الجديدة"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green focus:border-transparent text-left pr-10"
+                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green focus:border-transparent text-left pr-10 ${
+                                    errors.confirmPassword ? "border-red-500" : ""
+                                }`}
                             />
                             <button
                                 type="button"
@@ -142,14 +223,20 @@ export default function ChangePasswordPage() {
                                 )}
                             </button>
                         </div>
+                        {errors.confirmPassword && (
+                            <p className="text-red-500 text-sm text-right mt-1">
+                                {errors.confirmPassword}
+                            </p>
+                        )}
                     </div>
 
                     {/* Change Password Button */}
                     <button
                         type="submit"
-                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm cursor-pointer text-body-bold-16 text-white bg-green hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2D9A8E] transition-colors duration-300 mt-6"
+                        disabled={resetPasswordMutation.isPending}
+                        className="w-full flex justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm cursor-pointer text-body-bold-16 text-white bg-green hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2D9A8E] transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
                     >
-                        تغيير كلمة المرور
+                        {resetPasswordMutation.isPending ? "جاري تغيير كلمة المرور..." : "تغيير كلمة المرور"}
                     </button>
                 </form>
             </div>
