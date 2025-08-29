@@ -188,3 +188,64 @@ export const getPlaceCountsByCity = async (city) => {
         throw err;
     }
 };
+export const setSave = async (id) => {
+    try {
+        const res = await apiClient.post(`/saves/${id}?type=place`);
+        return res.data;
+    } catch (err) {
+        console.error("Error saving place:", err?.response?.data || err);
+        throw err;
+    }
+};
+
+// Remove saved place (admin)
+export const deleteSave = async (id) => {
+    try {
+        const res = await apiClient.delete(`/saves/${id}?type=place`);
+        return res.data;
+    } catch (err) {
+        console.error("Error removing saved place:", err?.response?.data || err);
+        throw err;
+    }
+};
+
+// Update your getSavedItems function in placesApi.js
+export const getSavedItems = async (type) => {
+    try {
+        const res = await apiClient.get(`/saves?type=${type}`);
+
+        console.log(`Saved items for ${type}:`, res.data);
+
+        // Extract the saves array from the response
+        const savesData = res.data.saves || [];
+
+        // Format the data based on type
+        return savesData.map(item => {
+            const baseItem = {
+                id: item.id,
+                name: item.name,
+                rating: item.rating || 0,
+                type: item.type || type,
+                city: item.city || 'دمشق', // Default to Damascus if not provided
+            };
+
+            // Add type-specific properties
+            if (type === 'hotel' || type === 'restaurant') {
+                return {
+                    ...baseItem,
+                    branches: item.branches || item.number_of_branches || 0,
+                };
+            } else if (type === 'tourist') {
+                return {
+                    ...baseItem,
+                    classification: item.classification || 'غير محدد',
+                };
+            }
+
+            return baseItem;
+        });
+    } catch (err) {
+        console.error("Error fetching saved items:", err?.response?.data || err);
+        throw new Error(err.response?.data?.message || "فشل في تحميل العناصر المحفوظة");
+    }
+};

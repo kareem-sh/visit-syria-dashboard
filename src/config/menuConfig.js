@@ -18,6 +18,11 @@ import feedbackIcon from "@/assets/icons/sidebar/feedbackStroke.svg";
 import feedbackIconActive from "@/assets/icons/sidebar/feedbackFill.svg";
 import notificationIcon from "@/assets/icons/sidebar/Notifications Stroke.svg";
 import notificationIconActive from "@/assets/icons/sidebar/Notiifcations Fill.svg";
+import FAQIcon from "@/assets/icons/sidebar/FAQIcon.svg";
+import FAQIconActive from "@/assets/icons/sidebar/FAQIconActive.svg";
+import SaveIcon from "@/assets/icons/sidebar/SaveIcon.svg";
+import SaveIconActive from "@/assets/icons/sidebar/SaveIconActive.svg";
+import TripIcon from "@/assets/icons/common/trips.svg"
 
 
 export const sidebarMenu = [
@@ -26,7 +31,21 @@ export const sidebarMenu = [
     to: "/",
     icon: dashboardIcon,
     iconActive: dashboardIconActive,
-    roles: ["superadmin", "admin","super_admin",null],
+    roles: ["superadmin","super_admin"],
+  },
+  {
+    label: "لوحة التحكم",
+    to: "/dashboard",
+    icon: dashboardIcon,
+    iconActive: dashboardIconActive,
+    roles: ["admin",null],
+  },
+  {
+    label: "الرحلات",
+    to: "/trips",
+    icon: TripIcon,
+    iconActive: dashboardIconActive,
+    roles: ["admin",null],
   },
   {
     label: "الشركات",
@@ -75,7 +94,7 @@ export const sidebarMenu = [
     to: "/support",
     icon: supportIcon,
     iconActive: supportIconActive,
-    roles: ["superadmin","admin","super_admin"],
+    roles: ["superadmin","super_admin"],
   },
   {
     label: "إدارة الإشعارات",
@@ -92,7 +111,14 @@ export const sidebarMenu = [
     roles: ["superadmin","super_admin"],
   },
   {
-  label: "الدعم اللوجستي",
+    label: "المحفوظات",
+    to: "/saves",
+    icon: SaveIcon,
+    iconActive: SaveIconActive,
+    roles: ["admin",null],
+  },
+  {
+  label: "سياسة الخصوصية",
     to: "/support/privacy_policy",
     icon: supportIcon,
     iconActive: supportIconActive,
@@ -101,8 +127,8 @@ export const sidebarMenu = [
   {
     label: "الأسئلة الشائعة",
     to: "/support/faq",
-    icon: supportIcon,
-    iconActive: supportIconActive,
+    icon: FAQIcon,
+    iconActive: FAQIconActive,
     roles: ["admin",null],
   },
 

@@ -9,32 +9,20 @@ import logoutIcon from "@/assets/icons/sidebar/logout.svg";
 import LogOutDialog from "@/components/dialog/LogOutDialog.jsx";
 
 const Sidebar = () => {
-    const { user, logout, loading } = useAuth();
+    const { user, logout, loading, isAdmin, isUser } = useAuth();
     const { isSidebarOpen } = useSidebar();
-
-    // State to manage the visibility of the logout dialog
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    // Safety check if user is null
     if (!user) return null;
 
     const isTabletOrSmaller = window.matchMedia("(max-width: 1024px)").matches;
 
-    // Handler to open the dialog
-    const handleLogoutClick = () => {
-        setIsDialogOpen(true);
-    };
-
-    // Handler to confirm and perform the logout
+    const handleLogoutClick = () => setIsDialogOpen(true);
     const handleConfirmLogout = () => {
-        logout(); // Call the logout function from your AuthContext
-        setIsDialogOpen(false); // Close the dialog
-    };
-
-    // Handler to close the dialog without logging out
-    const handleCloseDialog = () => {
+        logout();
         setIsDialogOpen(false);
     };
+    const handleCloseDialog = () => setIsDialogOpen(false);
 
     return (
         <>
@@ -69,43 +57,49 @@ const Sidebar = () => {
                         </div>
 
                         {/* Menu Items */}
-                        <nav className="w-full space-y-0.5">
+                        <nav className={`w-full ${isAdmin || isUser ? "space-y-4" : "space-y-0.5"}`}>
                             {sidebarMenu
                                 .filter((item) => item.roles.includes(user.role))
-                                .map((item) => (
-                                    <NavLink
-                                        key={item.to}
-                                        to={item.to}
-                                        className={({ isActive }) =>
-                                            `h-12 flex items-center transition-all duration-200 border-l-4 ${
-                                                isActive
-                                                    ? "border-[var(--color-green)] font-body-bold-16 text-body-bold-16"
-                                                    : "border-transparent hover:border-[var(--color-green)]"
-                                            } ${isSidebarOpen ? "pr-6 gap-2" : "justify-center"}`
-                                        }
-                                    >
-                                        {({ isActive }) => (
-                                            <>
-                                                <img
-                                                    src={isActive ? item.iconActive : item.icon}
-                                                    alt=""
-                                                    className="w-6 h-6"
-                                                />
-                                                {isSidebarOpen && (
-                                                    <span
-                                                        className={`text-[var(--text-title)] flex-1 text-right ${
-                                                            isActive
-                                                                ? "text-body-bold-16 font-body-bold-16"
-                                                                : "text-body-regular-16"
-                                                        }`}
-                                                    >
-                            {item.label}
-                          </span>
-                                                )}
-                                            </>
-                                        )}
-                                    </NavLink>
-                                ))}
+                                .map((item) => {
+                                    const disabled = isUser; // greyed-out for user role
+                                    return (
+                                        <NavLink
+                                            key={item.to}
+                                            to={disabled ? "#" : item.to}
+                                            onClick={(e) => disabled && e.preventDefault()}
+                                            className={({ isActive }) =>
+                                                `h-12 flex items-center transition-all duration-200 border-l-4 ${
+                                                    disabled
+                                                        ? "border-transparent opacity-50 cursor-not-allowed pointer-events-none"
+                                                        : isActive
+                                                            ? "border-[var(--color-green)] font-body-bold-16 text-body-bold-16"
+                                                            : "border-transparent hover:border-[var(--color-green)]"
+                                                } ${isSidebarOpen ? "pr-6 gap-2" : "justify-center"}`
+                                            }
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    <img
+                                                        src={isActive ? item.iconActive : item.icon}
+                                                        alt=""
+                                                        className="w-6 h-6"
+                                                    />
+                                                    {isSidebarOpen && (
+                                                        <span
+                                                            className={`text-[var(--text-title)] flex-1 text-right ${
+                                                                isActive
+                                                                    ? "text-body-bold-16 font-body-bold-16"
+                                                                    : "text-body-regular-16"
+                                                            }`}
+                                                        >
+                                                            {item.label}
+                                                        </span>
+                                                    )}
+                                                </>
+                                            )}
+                                        </NavLink>
+                                    );
+                                })}
                         </nav>
                     </div>
 
@@ -120,14 +114,14 @@ const Sidebar = () => {
                         <img src={logoutIcon} alt="" className="w-5 h-5" />
                         {isSidebarOpen && (
                             <span className="text-body-regular-16-auto text-[var(--text-title)] flex-1 text-right">
-                {loading ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
-              </span>
+                                {loading ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
+                            </span>
                         )}
                     </button>
                 </div>
             </aside>
 
-            {/* The Logout Dialog */}
+            {/* Logout Dialog */}
             <LogOutDialog
                 isOpen={isDialogOpen}
                 onClose={handleCloseDialog}

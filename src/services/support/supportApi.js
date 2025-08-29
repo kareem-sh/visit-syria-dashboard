@@ -1,15 +1,27 @@
     import apiClient from '@/services/apiClient';
 
-    // Fetch common questions (FAQs)
-    export const getCommonQuestions = async () => {
-        const response = await apiClient.get('settings/type/common_question');
-        return response.data;
+    export const getCommonQuestions = async (category) => {
+        if (category) {
+            const response = await apiClient.get('settings/type/common_question', {
+                params: { category }
+            });
+            return response.data;
+        } else {
+            const response = await apiClient.get('settings/type/common_question');
+            return response.data;
+        }
     };
 
-    // Fetch privacy policy content
-    export const getPrivacyAndPolicy = async () => {
-        const response = await apiClient.get('settings/type/privacy_policy');
-        return response.data;
+    export const getPrivacyAndPolicy = async (category) => {
+        if (category) {
+            const response = await apiClient.get('settings/type/privacy_policy', {
+                params: { category }
+            });
+            return response.data;
+        } else {
+            const response = await apiClient.get('settings/type/privacy_policy');
+            return response.data;
+        }
     };
 
 

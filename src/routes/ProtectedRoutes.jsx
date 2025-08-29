@@ -13,21 +13,26 @@ const ProtectedRoute = ({ requiredRole, children }) => {
         return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
+    // Restrict users with null role
+    if (user.role === null) {
+        // Allow dashboard only
+        if (location.pathname !== "/dashboard") {
+            return <Navigate to="/dashboard" replace />;
+        }
+        return children; // dashboard is allowed
+    }
+
     // Handle role-based access control
     if (requiredRole) {
-        // Superadmin only route
         if (requiredRole === "super_admin" && user.role !== "super_admin") {
             return <Navigate to="/dashboard" replace />;
         }
 
-        // Admin route (allow admin, super_admin, and pending users with null role)
-        if (requiredRole === "admin" && !["admin", null].includes(user.role)) {
+        if (requiredRole === "admin" && user.role !== "admin") {
             return <Navigate to="/dashboard" replace />;
         }
 
-        // User route (allow all authenticated users including those with null role)
-        if (requiredRole === "user") {
-            // All authenticated users can access user routes
+        if (requiredRole === null) {
             return children;
         }
     }

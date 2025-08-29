@@ -6,8 +6,6 @@ import Chart from "@/components/common/Chart.jsx";
 import { PageSkeleton } from "@/components/common/PageSkeleton.jsx";
 import GoldSpinner from "@/components/common/GoldCircularProgress.jsx";
 import places from "@/assets/images/places.svg";
-
-// Directly import all governorate images
 import PlaceCardDamascus from "@/assets/images/places/Place Card-13.png";
 import PlaceCardRifDimashq from "@/assets/images/places/Place Card.svg";
 import PlaceCardHama from "@/assets/images/places/Place Card-1.svg";
@@ -22,19 +20,13 @@ import PlaceCardIdlib from "@/assets/images/places/Place Card-10.svg";
 import PlaceCardHasaka from "@/assets/images/places/Place Card-11.svg";
 import PlaceCardQuneitra from "@/assets/images/places/Place Card-8.svg";
 import PlaceCardRaqqa from "@/assets/images/places/Place Card-12.svg";
-import placesIcon from "@/assets/images/places.svg";
-
-
 import PlaceForm from "@/components/dialog/PlaceForm.jsx";
 import ActionSuccessDialog from "@/components/dialog/ActionSuccessDialog";
-import {
-    createPlace,
-    getTopTouristPlaces,
-    getTopRestaurants,
-    getTopHotels
-} from "@/services/places/placesApi.js";
+import { createPlace, getTopTouristPlaces, getTopRestaurants, getTopHotels } from "@/services/places/placesApi.js";
+import { useAuth } from "@/hooks/useAuth.jsx"; // <-- Added import
 
 export default function Places() {
+    const { user } = useAuth(); // <-- Get current user
     const queryClient = useQueryClient();
     const [selectedStat, setSelectedStat] = useState("places");
     const [isPlaceDialogOpen, setIsPlaceDialogOpen] = useState(false);
@@ -43,7 +35,6 @@ export default function Places() {
     const [successStatus, setSuccessStatus] = useState("success");
     const [initialLoad, setInitialLoad] = useState(true);
 
-    // Fetch data with cache-first strategy
     const {
         data: touristData,
         isLoading: isLoadingTourist,
@@ -54,9 +45,7 @@ export default function Places() {
         enabled: selectedStat === 'places',
         staleTime: Infinity,
         cacheTime: 5 * 60 * 1000,
-        onSettled: () => {
-            if (initialLoad) setInitialLoad(false);
-        }
+        onSettled: () => { if (initialLoad) setInitialLoad(false); }
     });
 
     const {
@@ -83,28 +72,17 @@ export default function Places() {
         cacheTime: 5 * 60 * 1000
     });
 
-    const handleStatChange = (value) => {
-        setSelectedStat(value);
-    };
+    const handleStatChange = (value) => setSelectedStat(value);
 
     const getChartData = () => {
         if (selectedStat === 'places' && touristData) {
-            return {
-                labels: touristData.map(item => item.name),
-                values: touristData.map(item => item.rating)
-            };
+            return { labels: touristData.map(item => item.name), values: touristData.map(item => item.rating) };
         }
         if (selectedStat === 'restaurants' && restaurantsData) {
-            return {
-                labels: restaurantsData.map(item => item.name),
-                values: restaurantsData.map(item => item.rating)
-            };
+            return { labels: restaurantsData.map(item => item.name), values: restaurantsData.map(item => item.rating) };
         }
         if (selectedStat === 'hotels' && hotelsData) {
-            return {
-                labels: hotelsData.map(item => item.name),
-                values: hotelsData.map(item => item.rating)
-            };
+            return { labels: hotelsData.map(item => item.name), values: hotelsData.map(item => item.rating) };
         }
         return { labels: [], values: [] };
     };
@@ -129,19 +107,12 @@ export default function Places() {
     ];
 
     const handlePlaceSuccess = ({ message, status, newPlace } = {}) => {
-        // Optimistically update the counts
         if (newPlace?.city && newPlace?.type) {
             queryClient.setQueryData(['placeCounts', newPlace.city], (oldData) => {
                 if (!oldData) return oldData;
-
-                const typeKey =
-                    newPlace.type === 'restaurant' ? 'restaurants' :
-                        newPlace.type === 'hotel' ? 'hotels' : 'touristPlaces';
-
-                return {
-                    ...oldData,
-                    [typeKey]: oldData[typeKey] + 1
-                };
+                const typeKey = newPlace.type === 'restaurant' ? 'restaurants' :
+                    newPlace.type === 'hotel' ? 'hotels' : 'touristPlaces';
+                return { ...oldData, [typeKey]: oldData[typeKey] + 1 };
             });
         }
 
@@ -150,19 +121,16 @@ export default function Places() {
         setSuccessOpen(true);
         setIsPlaceDialogOpen(false);
 
-        // Invalidate all relevant queries
         queryClient.invalidateQueries(['placeCounts']);
         queryClient.invalidateQueries(['topTouristPlaces']);
         queryClient.invalidateQueries(['topRestaurants']);
         queryClient.invalidateQueries(['topHotels']);
     };
 
-    // Show skeleton only on initial load
     if (initialLoad && isLoadingTourist) {
         return <PageSkeleton rows={6} />;
     }
 
-    // Determine if we should show loading spinner
     const showLoadingSpinner =
         (selectedStat === 'places' && isFetchingTourist && !touristData) ||
         (selectedStat === 'restaurants' && isFetchingRestaurants && !restaurantsData) ||
@@ -170,13 +138,16 @@ export default function Places() {
 
     return (
         <div className="flex flex-col gap-8">
-            <Banner
-                title="إضافة مكان"
-                description="يمكنك إضافة بيانات الموقع السياحي المراد إضافته إلى قائمة الأماكن المعتمدة لدى وزارة السياحة"
-                icon={places}
-                buttonText="إضافة"
-                onButtonClick={() => setIsPlaceDialogOpen(true)}
-            />
+            {/* Banner only shows if not superadmin */}
+            {user?.role === "super_admin" && (
+                <Banner
+                    title="إضافة مكان"
+                    description="يمكنك إضافة بيانات الموقع السياحي المراد إضافته إلى قائمة الأماكن المعتمدة لدى وزارة السياحة"
+                    icon={places}
+                    buttonText="إضافة"
+                    onButtonClick={() => setIsPlaceDialogOpen(true)}
+                />
+            )}
 
             {isPlaceDialogOpen && (
                 <PlaceForm
@@ -201,36 +172,21 @@ export default function Places() {
                     </div>
 
                     <div className="flex gap-5">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="radio"
-                                value="places"
-                                checked={selectedStat === "places"}
-                                onChange={(e) => handleStatChange(e.target.value)}
-                                className="accent-green cursor-pointer"
-                            />
-                            <span className="text-body-regular-16-auto">الأماكن السياحية</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="radio"
-                                value="restaurants"
-                                checked={selectedStat === "restaurants"}
-                                onChange={(e) => handleStatChange(e.target.value)}
-                                className="accent-green cursor-pointer"
-                            />
-                            <span className="text-body-regular-16-auto">المطاعم</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="radio"
-                                value="hotels"
-                                checked={selectedStat === "hotels"}
-                                onChange={(e) => handleStatChange(e.target.value)}
-                                className="accent-green cursor-pointer"
-                            />
-                            <span className="text-body-regular-16-auto">الفنادق</span>
-                        </label>
+                        {["places", "restaurants", "hotels"].map(stat => (
+                            <label key={stat} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    value={stat}
+                                    checked={selectedStat === stat}
+                                    onChange={(e) => handleStatChange(e.target.value)}
+                                    className="accent-green cursor-pointer"
+                                />
+                                <span className="text-body-regular-16-auto">
+                                    {stat === "places" ? "الأماكن السياحية" :
+                                        stat === "restaurants" ? "المطاعم" : "الفنادق"}
+                                </span>
+                            </label>
+                        ))}
                     </div>
                 </div>
 

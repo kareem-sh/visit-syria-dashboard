@@ -10,177 +10,161 @@ import GreenPen from "@/assets/icons/common/Green Pen.svg";
 import Bin from "@/assets/icons/event/bin.svg";
 import SupportForm from '@/components/dialog/supportDialog.jsx';
 import DeleteDialog from '@/components/dialog/DeleteDialog.jsx';
-import { getCommonQuestions, getPrivacyAndPolicy, createSetting, updateSetting, deleteSetting } from '@/services/support/supportApi';
+import {
+    getCommonQuestions,
+    getPrivacyAndPolicy,
+    createSetting,
+    updateSetting,
+    deleteSetting
+} from '@/services/support/supportApi';
+import { useAuth } from '@/contexts/AuthContext';
 
-const FAQOrTermsCard = ({ title, description, icon, onEdit, onDelete, category, id }) => {
+/**
+ * Card component for FAQ or Terms
+ */
+const FAQOrTermsCard = ({ title, description, icon, onEdit, onDelete, category, id, isSuperAdmin }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-    const toggleDropdown = () => {
-        setIsDropdownOpen(!isDropdownOpen);
-    };
 
     return (
         <div className="bg-white rounded-[16px] shadow-md p-6 border-2 border-gray-200 relative">
             <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
-                    <img
-                        src={icon}
-                        alt="icon"
-                        className="w-[25px] h-[25px] flex-shrink-0 object-contain"
-                    />
+                    <img src={icon} alt="icon" className="w-[25px] h-[25px] flex-shrink-0 object-contain" />
                     <h3 className="text-xl font-semibold">{title}</h3>
                 </div>
-                <div className="relative">
-                    <div
-                        className="w-8 h-8 flex items-center justify-center cursor-pointer rounded-full hover:bg-gray-100"
-                        onClick={toggleDropdown}
-                    >
-                        {/* 3 dots icon */}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                            className="w-6 h-6 text-gray-400"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
-                            />
-                        </svg>
-                    </div>
 
-                    {/* Dropdown */}
-                    {isDropdownOpen && (
-                        <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-md shadow-lg py-2 z-10 border border-gray-200">
-                            <div
-                                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                onClick={() => {
-                                    setIsDropdownOpen(false);
-                                    onEdit?.({ id, title, description, category });
-                                }}
-                            >
-                                <img src={GreenPen} alt="Edit" className="w-4 h-4" />
-                                <span className="text-gray-700">تعديل</span>
-                            </div>
-                            <div
-                                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                onClick={() => {
-                                    setIsDropdownOpen(false);
-                                    setIsDeleteDialogOpen(true);
-                                }}
-                            >
-                                <img src={Bin} alt="Delete" className="w-4 h-4" style={{ filter: 'invert(25%) sepia(98%) saturate(7485%) hue-rotate(358deg) brightness(94%) contrast(118%)' }} />
-                                <span className="text-red-500">حذف</span>
-                            </div>
+                {/* Dropdown only for super admin */}
+                {isSuperAdmin && (
+                    <div className="relative">
+                        <div
+                            className="w-8 h-8 flex items-center justify-center cursor-pointer rounded-full hover:bg-gray-100"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                 strokeWidth={2} stroke="currentColor"
+                                 className="w-6 h-6 text-gray-400">
+                                <path strokeLinecap="round" strokeLinejoin="round"
+                                      d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                            </svg>
                         </div>
-                    )}
-                </div>
+
+                        {isDropdownOpen && (
+                            <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-md shadow-lg py-2 z-10 border border-gray-200">
+                                <div
+                                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                    onClick={() => {
+                                        setIsDropdownOpen(false);
+                                        onEdit?.({ id, title, description, category });
+                                    }}
+                                >
+                                    <img src={GreenPen} alt="Edit" className="w-4 h-4" />
+                                    <span className="text-gray-700">تعديل</span>
+                                </div>
+                                <div
+                                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                    onClick={() => {
+                                        setIsDropdownOpen(false);
+                                        setIsDeleteDialogOpen(true);
+                                    }}
+                                >
+                                    <img src={Bin} alt="Delete" className="w-4 h-4"
+                                         style={{ filter: 'invert(25%) sepia(98%) saturate(7485%) hue-rotate(358deg) brightness(94%) contrast(118%)' }} />
+                                    <span className="text-red-500">حذف</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <p className="text-sm text-gray-600 leading-6">{description}</p>
 
             {/* Delete Dialog */}
-            <DeleteDialog
-                isOpen={isDeleteDialogOpen}
-                onClose={() => setIsDeleteDialogOpen(false)}
-                onConfirm={() => {
-                    onDelete?.(id);
-                    setIsDeleteDialogOpen(false);
-                }}
-                title="حذف المحتوى"
-                message="هل أنت متأكد أنك تريد حذف هذا العنصر؟"
-            />
+            {isSuperAdmin && (
+                <DeleteDialog
+                    isOpen={isDeleteDialogOpen}
+                    onClose={() => setIsDeleteDialogOpen(false)}
+                    onConfirm={() => {
+                        onDelete?.(id);
+                        setIsDeleteDialogOpen(false);
+                    }}
+                    title="حذف المحتوى"
+                    message="هل أنت متأكد أنك تريد حذف هذا العنصر؟"
+                />
+            )}
         </div>
     );
 };
 
-const FAQOrTermsList = ({ type, onEdit, onDelete, data, isLoading }) => {
+/**
+ * List of FAQ / Terms
+ */
+const FAQOrTermsList = ({ type, onEdit, onDelete, data, isLoading, isSuperAdmin }) => {
     const [selectedOption, setSelectedOption] = useState('tourism');
 
     if (isLoading) {
-        return (
-            <div className="mx-auto mt-6">
-                <div className="flex justify-between items-center mb-6">
-                    <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
-                    <div className="flex gap-6">
-                        <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
-                        <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
-                    </div>
-                </div>
-                <div className="grid gap-6">
-                    {[1, 2, 3].map((item) => (
-                        <div key={item} className="bg-white rounded-[16px] p-6 border-2 border-gray-200">
-                            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 rounded w-4/5 mb-2 animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
+        return <div className="mx-auto mt-6">Loading...</div>;
     }
 
     const sectionTitle = type === 'privacy_policy' ? 'شروط الاستخدام و سياسة الخصوصية' : 'الأسئلة الشائعة';
     const selectedIcon = type === 'privacy_policy' ? SupportFAQg : SupportQg;
 
-    // Filter data based on selected radio button
+    // Filter client vs tourism categories
     const filteredData = data?.data?.filter(item => {
-        if (selectedOption === 'tourism') {
-            return item.category === 'admin' || item.category === 'appandadmin';
+        if (isSuperAdmin) {
+            if (selectedOption === 'tourism') {
+                return item.category === 'admin' || item.category === 'appandadmin';
+            } else {
+                return item.category === 'app' || item.category === 'appandadmin';
+            }
         } else {
-            return item.category === 'app' || item.category === 'appandadmin';
+            // non-superadmin → always show only admin
+            return item.category === 'admin' || item.category === 'appandadmin';
         }
     });
 
     return (
-        <div className="mx-auto mt-6">
-            {/* Section title and radio buttons container */}
+        <div className={`mx-auto ${isSuperAdmin ? "mt-6" : "mt-1"}`}>
             <div className="flex justify-between items-center mb-6">
-                {/* Section title */}
                 <h2 className="text-2xl font-bold text-gray-800">{sectionTitle}</h2>
 
-                {/* Radio buttons container */}
-                <div className="flex items-center gap-6">
-                    {/* Tourism companies radio button */}
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="radio"
-                            name="platform"
-                            value="tourism"
-                            checked={selectedOption === 'tourism'}
-                            onChange={() => setSelectedOption('tourism')}
-                            className="hidden"
-                        />
-                        <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedOption === 'tourism' ? 'border-green-500' : 'border-gray-300'}`}>
-                            {selectedOption === 'tourism' && <span className="w-3 h-3 rounded-full bg-green-500"></span>}
-                        </span>
-                        <span className="text-sm font-semibold text-gray-600">لوحة تحكم شركات السياحة</span>
-                    </label>
+                {/* Show radio toggle only if superadmin */}
+                {isSuperAdmin && (
+                    <div className="flex items-center gap-6">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="platform"
+                                value="tourism"
+                                checked={selectedOption === 'tourism'}
+                                onChange={() => setSelectedOption('tourism')}
+                                className="hidden"
+                            />
+                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedOption === 'tourism' ? 'border-green-500' : 'border-gray-300'}`}>
+                {selectedOption === 'tourism' && <span className="w-3 h-3 rounded-full bg-green"></span>}
+              </span>
+                            <span className="text-sm font-semibold text-gray-600">لوحة تحكم شركات السياحة</span>
+                        </label>
 
-                    {/* Users radio button */}
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="radio"
-                            name="platform"
-                            value="user"
-                            checked={selectedOption === 'user'}
-                            onChange={() => setSelectedOption('user')}
-                            className="hidden"
-                        />
-                        <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedOption === 'user' ? 'border-green-500' : 'border-gray-300'}`}>
-                            {selectedOption === 'user' && <span className="w-3 h-3 rounded-full bg-green-500"></span>}
-                        </span>
-                        <span className="text-sm font-semibold text-gray-600">تطبيق المستخدمين</span>
-                    </label>
-                </div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="platform"
+                                value="user"
+                                checked={selectedOption === 'user'}
+                                onChange={() => setSelectedOption('user')}
+                                className="hidden"
+                            />
+                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedOption === 'user' ? 'border-green-500' : 'border-gray-300'}`}>
+                {selectedOption === 'user' && <span className="w-3 h-3 rounded-full bg-green"></span>}
+              </span>
+                            <span className="text-sm font-semibold text-gray-600">تطبيق المستخدمين</span>
+                        </label>
+                    </div>
+                )}
             </div>
 
-            {/* List of cards */}
             <div className="grid gap-6">
                 {filteredData && filteredData.length > 0 ? (
                     filteredData.map((item) => (
@@ -193,12 +177,11 @@ const FAQOrTermsList = ({ type, onEdit, onDelete, data, isLoading }) => {
                             onEdit={onEdit}
                             onDelete={onDelete}
                             category={item.category}
+                            isSuperAdmin={isSuperAdmin}
                         />
                     ))
                 ) : (
-                    <div className="text-center py-10 text-gray-500">
-                        لا توجد عناصر لعرضها
-                    </div>
+                    <div className="text-center py-10 text-gray-500">لا توجد عناصر لعرضها</div>
                 )}
             </div>
         </div>
@@ -206,82 +189,61 @@ const FAQOrTermsList = ({ type, onEdit, onDelete, data, isLoading }) => {
 };
 
 /**
- * The main page component for Support Details.
+ * Main SupportDetails page
  */
 const SupportDetails = () => {
     const { type } = useParams();
+    const { isSuperAdmin } = useAuth();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [dialogMode, setDialogMode] = useState("create");
     const [editData, setEditData] = useState(null);
     const queryClient = useQueryClient();
 
-    // Fetch data based on type
+    // React Query fetcher
     const { data, isLoading, error } = useQuery({
         queryKey: [type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions'],
-        queryFn: type === 'privacy_policy' ? getPrivacyAndPolicy : getCommonQuestions,
-        staleTime: 10 * 60 * 1000, // 10 minutes cache
+        queryFn: ({ queryKey }) => {
+            const key = queryKey[0];
+            if (key === "privacyPolicy") {
+                return isSuperAdmin ? getPrivacyAndPolicy() : getPrivacyAndPolicy("admin");
+            } else {
+                return isSuperAdmin ? getCommonQuestions() : getCommonQuestions("admin");
+            }
+        },
+        staleTime: 10 * 60 * 1000,
     });
 
-    // Create mutation
+    // Mutations
     const createMutation = useMutation({
         mutationFn: createSetting,
-        onSuccess: () => {
-            // Invalidate and refetch
-            queryClient.invalidateQueries([type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions']);
-        },
-        onError: (error) => {
-            console.error("Create error:", error);
-        }
+        onSuccess: () => queryClient.invalidateQueries([type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions']),
     });
 
-    // Update mutation
     const updateMutation = useMutation({
         mutationFn: ({ id, ...data }) => updateSetting(id, data),
-        onSuccess: () => {
-            // Invalidate and refetch
-            queryClient.invalidateQueries([type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions']);
-        },
-        onError: (error) => {
-            console.error("Update error:", error);
-        }
+        onSuccess: () => queryClient.invalidateQueries([type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions']),
     });
 
-    // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: deleteSetting,
-        onSuccess: () => {
-            // Invalidate and refetch
-            queryClient.invalidateQueries([type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions']);
-        },
-        onError: (error) => {
-            console.error("Delete error:", error);
-        }
+        onSuccess: () => queryClient.invalidateQueries([type === 'privacy_policy' ? 'privacyPolicy' : 'commonQuestions']),
     });
 
+    // Dialog handlers
     const openDialog = () => {
         setDialogMode("create");
         setEditData(null);
         setIsDialogOpen(true);
     };
-
     const openEditDialog = (data) => {
         setDialogMode("edit");
         setEditData(data);
         setIsDialogOpen(true);
     };
-
-    const handleDelete = (id) => {
-        if (id) {
-            deleteMutation.mutate(id);
-        }
-    };
-
+    const handleDelete = (id) => deleteMutation.mutate(id);
     const closeDialog = () => setIsDialogOpen(false);
 
     const handleSubmit = (formData) => {
-        console.log("Form data:", formData);
-
-        // Prepare API data
         const apiData = {
             category: formData.category,
             type: type === 'privacy_policy' ? 'privacy_policy' : 'common_question',
@@ -289,16 +251,10 @@ const SupportDetails = () => {
             description: formData.description
         };
 
-        console.log("API data:", apiData);
-
         if (dialogMode === "create") {
             createMutation.mutate(apiData);
         } else {
-            // For edit, include the ID
-            updateMutation.mutate({
-                id: editData.id,
-                ...apiData
-            });
+            updateMutation.mutate({ id: editData.id, ...apiData });
         }
         closeDialog();
     };
@@ -316,22 +272,27 @@ const SupportDetails = () => {
 
     return (
         <div>
-            <Banner
-                title={b_title}
-                description={b_description}
-                icon={type === "privacy_policy" ? SupportFAQ : SupportQ}
-                onButtonClick={openDialog}
-            />
+            {/* Show banner only if super admin */}
+            {isSuperAdmin && (
+                <Banner
+                    title={b_title}
+                    description={b_description}
+                    icon={type === "privacy_policy" ? SupportFAQ : SupportQ}
+                    onButtonClick={openDialog}
+                />
+            )}
 
-            <SupportForm
-                open={isDialogOpen}
-                onClose={closeDialog}
-                mode={dialogMode}
-                onSubmit={handleSubmit}
-                type={dialog_type}
-                initialData={editData}
-                isLoading={createMutation.isLoading || updateMutation.isLoading}
-            />
+            {isSuperAdmin && (
+                <SupportForm
+                    open={isDialogOpen}
+                    onClose={closeDialog}
+                    mode={dialogMode}
+                    onSubmit={handleSubmit}
+                    type={dialog_type}
+                    initialData={editData}
+                    isLoading={createMutation.isLoading || updateMutation.isLoading}
+                />
+            )}
 
             <FAQOrTermsList
                 type={type}
@@ -339,6 +300,7 @@ const SupportDetails = () => {
                 onDelete={handleDelete}
                 data={data}
                 isLoading={isLoading}
+                isSuperAdmin={isSuperAdmin}
             />
         </div>
     );

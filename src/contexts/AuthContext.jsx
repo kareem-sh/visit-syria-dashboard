@@ -1,6 +1,6 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useEffect, useContext, useCallback } from "react";
 import { getUserRoleAndData } from "@/services/auth/AuthApi.js";
-import { setAPIToken, clearAPIToken } from "@/services/apiClient"; // Import the token functions
+import { setAPIToken, clearAPIToken } from "@/services/apiClient";
 
 export const AuthContext = createContext();
 
@@ -18,47 +18,75 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // --- logout ---
+  const logout = useCallback(() => {
+    // Clear state
+    setUser(null);
+    setToken(null);
+    setError(null);
+
+    // Clear storage
+    localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
+
+    // Clear API token
+    clearAPIToken();
+
+    // Clear query cache if available
+    if (window.queryClient) {
+      window.queryClient.clear();
+    }
+
+    // Redirect to login
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+  }, []);
+
+  // --- initialize on mount ---
   useEffect(() => {
     const initializeAuth = async () => {
-      // Clear any potential stale data first
       const storedToken = localStorage.getItem("authToken");
       const storedUser = localStorage.getItem("user");
 
-      // If no token exists, ensure clean state
       if (!storedToken) {
+        // no token = clean state
+        clearAPIToken();
         setUser(null);
         setToken(null);
         setLoading(false);
-        clearAPIToken(); // Clear API token
         return;
       }
 
       setToken(storedToken);
-      setAPIToken(storedToken); // Set token in API client
+      setAPIToken(storedToken);
 
-      // If we have stored user data, use it immediately for better UX
+      // use cached user immediately
       if (storedUser) {
         try {
           setUser(JSON.parse(storedUser));
         } catch (e) {
-          console.error("Failed to parse stored user data:", e);
+          console.error("Failed to parse stored user:", e);
           localStorage.removeItem("user");
         }
       }
 
-      // Always fetch fresh user data on app initialization
+      // fetch fresh user
       try {
         const userData = await getUserRoleAndData(storedToken);
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         setError(null);
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
 
-        // Check if it's an authentication error
-        if (error.response?.status === 401 || error.response?.status === 403 || error.message === "Authentication failed: Invalid or expired token") {
+        if (
+            err.response?.status === 401 ||
+            err.response?.status === 403 ||
+            err.message?.includes("Invalid or expired token")
+        ) {
           setError("Session expired. Please login again.");
-          logout(); // Clear invalid session
+          logout();
         } else {
           setError("Failed to validate session. Please try again.");
         }
@@ -68,46 +96,25 @@ export const AuthProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, []);
+  }, [logout]);
 
+  // --- login ---
   const login = (userData, authToken) => {
-    // Clear any existing data first
+    // clear any existing
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
 
-    // Set new data
+    // set new
     setUser(userData);
     setToken(authToken);
-    setAPIToken(authToken); // Set token in API client
+    setAPIToken(authToken);
+
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("authToken", authToken);
     setError(null);
   };
 
-  const logout = () => {
-    // Clear all state
-    setUser(null);
-    setToken(null);
-    setError(null);
-
-    // Clear all storage
-    localStorage.removeItem("user");
-    localStorage.removeItem("authToken");
-
-    // Clear API token
-    clearAPIToken();
-
-    // Clear any query caches that might contain user data
-    if (window.queryClient) {
-      window.queryClient.clear();
-    }
-
-    // Redirect to login page
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
-  };
-
+  // --- refresh user ---
   const refreshUserData = async () => {
     if (!token) return;
 
@@ -117,34 +124,27 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(userData));
       setError(null);
       return userData;
-    } catch (error) {
-      console.error("Failed to refresh user data:", error);
+    } catch (err) {
+      console.error("Failed to refresh user data:", err);
 
-      // Check if it's an authentication error
-      if (error.response?.status === 401 || error.response?.status === 403 || error.message === "Authentication failed: Invalid or expired token") {
+      if (
+          err.response?.status === 401 ||
+          err.response?.status === 403 ||
+          err.message?.includes("Invalid or expired token")
+      ) {
         setError("Session expired. Please login again.");
         logout();
       } else {
         setError("Failed to refresh user data");
       }
-      throw error;
+      throw err;
     }
   };
 
-  // Helper function to check if user has specific role
-  const hasRole = (roleName) => {
-    return user?.role === roleName;
-  };
-
-  // Check if user has any of the specified roles
-  const hasAnyRole = (roleNames) => {
-    return roleNames.includes(user?.role);
-  };
-
-  // Check if user is pending (null role)
-  const isPending = () => {
-    return user?.role === null;
-  };
+  // --- role helpers ---
+  const hasRole = (roleName) => user?.role === roleName;
+  const hasAnyRole = (roleNames) => roleNames.includes(user?.role);
+  const isPending = () => user?.role === null;
 
   return (
       <AuthContext.Provider
@@ -162,7 +162,7 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated: !!token,
             isAdmin: user?.role === "admin",
             isSuperAdmin: user?.role === "super_admin",
-            isUser: user?.role === null || user?.role === "user"
+            isUser: user?.role === null || user?.role === "user",
           }}
       >
         {children}

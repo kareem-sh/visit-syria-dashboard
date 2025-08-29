@@ -18,6 +18,7 @@ import ContactUs from "@/pages/superadmin/contact-us/ContactUs.jsx";
 import Events from "@/pages/superadmin/events/Events.jsx";
 import EventDetails from "@/pages/superadmin/events/EventsDetails.jsx";
 import TripDetailsPage from "@/pages/superadmin/trips/TripDetailsPage.jsx";
+import Support from "@/pages/superadmin/support/Support.jsx";
 
 const superadminRoutes = [
     { path: "/", element: <DashboardOverview /> },
@@ -40,6 +41,7 @@ const superadminRoutes = [
     { path: "/notifications/", element: <SendNotifications /> },
     { path: "/feedback/", element: <Feedback /> },
     { path: "/contact-us/", element: <ContactUs /> },
+    { path: "/support/", element: <Support /> },
 ];
 
 export default superadminRoutes;
