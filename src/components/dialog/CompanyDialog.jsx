@@ -12,6 +12,7 @@ import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import Decline from "@/assets/icons/common/decline.svg";
 import Approve from "@/assets/icons/common/approve.svg";
 import { changeCompanyStatus } from "@/services/companies/companiesApi";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CompanyDialog({
                                           open,
@@ -24,6 +25,7 @@ export default function CompanyDialog({
                                           isLoading = false
                                       }) {
     const isViewMode = mode === "view";
+    const { isSuperAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
         name_of_company: "", name_of_owner: "", license_number: "",
@@ -268,7 +270,10 @@ export default function CompanyDialog({
         if (!formData.name_of_owner) newErrors.name_of_owner = "اسم صاحب الشركة مطلوب";
         if (!formData.license_number) newErrors.license_number = "رقم الترخيص مطلوب";
         if (!formData.founding_date) newErrors.founding_date = "تاريخ التأسيس مطلوب";
-        if (!formData.email) newErrors.email = "البريد الإلكتروني مطلوب";
+
+        // Only validate email if user is super admin
+        if (isSuperAdmin && !formData.email) newErrors.email = "البريد الإلكتروني مطلوب";
+
         if (!formData.phone) newErrors.phone = "رقم الهاتف مطلوب";
         if (!formData.description) newErrors.description = "الوصف مطلوب";
         if (!formData.latitude || !formData.longitude) newErrors.location = "الموقع مطلوب";
@@ -285,7 +290,11 @@ export default function CompanyDialog({
 
     const handleAddClick = () => {
         if (validateForm()) {
-            onAdd && onAdd(formData);
+            // Only include email in formData if user is super admin
+            const submitData = isSuperAdmin
+                ? formData
+                : { ...formData, email: undefined };
+            onAdd && onAdd(submitData);
         }
     };
 
@@ -314,8 +323,6 @@ export default function CompanyDialog({
 
         try {
             await changeCompanyStatus(initialData.id, 'accept');
-            // Only show one toast message - remove the duplicate from onAccept callback
-            // toast.success("تم قبول الشركة بنجاح");
             onAccept && onAccept(initialData);
             onClose();
         } catch (error) {
@@ -331,8 +338,6 @@ export default function CompanyDialog({
 
         try {
             await changeCompanyStatus(initialData.id, 'reject', reason);
-            // Only show one toast message - remove the duplicate from onDecline callback
-            // toast.success("تم رفض الشركة بنجاح");
             onDecline && onDecline({ ...initialData, rejectionReason: reason });
             onClose();
         } catch (error) {
@@ -424,11 +429,16 @@ export default function CompanyDialog({
                             />
                             {errors.founding_date && <p className="text-red-500 text-xs mt-1">{errors.founding_date}</p>}
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني*</label>
-                            <input type="email" name="email" value={formData.email} onChange={handleChange} disabled={isViewMode || isLoading} className={fieldClass(errors.email)} placeholder="example@email.com"/>
-                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                        </div>
+
+                        {/* Conditionally render email field only for super admin */}
+                        {isSuperAdmin && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني*</label>
+                                <input type="email" name="email" value={formData.email} onChange={handleChange} disabled={isViewMode || isLoading} className={fieldClass(errors.email)} placeholder="example@email.com"/>
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف*</label>
                             <div className="placeform-phone-wrapper">

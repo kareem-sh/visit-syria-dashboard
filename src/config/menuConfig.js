@@ -23,6 +23,7 @@ import FAQIconActive from "@/assets/icons/sidebar/FAQIconActive.svg";
 import SaveIcon from "@/assets/icons/sidebar/SaveIcon.svg";
 import SaveIconActive from "@/assets/icons/sidebar/SaveIconActive.svg";
 import TripIcon from "@/assets/icons/common/trips.svg"
+import TripIconActive from "@/assets/icons/sidebar/sidebar Icons.svg"
 
 
 export const sidebarMenu = [
@@ -44,7 +45,7 @@ export const sidebarMenu = [
     label: "الرحلات",
     to: "/trips",
     icon: TripIcon,
-    iconActive: dashboardIconActive,
+    iconActive: TripIconActive,
     roles: ["admin",null],
   },
   {

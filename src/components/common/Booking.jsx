@@ -3,6 +3,8 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DialogTable from "@/components/common/DialogTable";
 import SortFilterButton from "@/components/common/SortFilterButton";
+import { useAuth } from "@/contexts/AuthContext.jsx"
+
 
 const filterOptions = [
     { label: "الكل", value: "all" },
@@ -20,6 +22,7 @@ const Bookings = ({ data = [] }) => {
     const [filteredData, setFilteredData] = useState([]);
     const [currentFilter, setCurrentFilter] = useState("all");
     const navigate = useNavigate();
+    const { isSuperAdmin } = useAuth();
 
     /**
      * Map a single booking item (either nested raw API shape or already-flattened shape)
@@ -241,14 +244,17 @@ const Bookings = ({ data = [] }) => {
                                 </div>
                             </div>
 
-                            <div className="mb-6">
-                                <button
-                                    onClick={() => navigate(`/users/${refNumber}`)}
-                                    className="w-full inline-block text-h2-bold-16 bg-green hover:shadow-md cursor-pointer text-(--text-title-inverse) py-3 px-6 rounded-lg "
-                                >
-                                    الانتقال الى الملف الشخصي
-                                </button>
-                            </div>
+                            {/* Only show button if user is super admin */}
+                            {isSuperAdmin && (
+                                <div className="mb-6">
+                                    <button
+                                        onClick={() => navigate(`/users/${refNumber}`)}
+                                        className="w-full inline-block text-h2-bold-16 bg-green hover:shadow-md cursor-pointer text-(--text-title-inverse) py-3 px-6 rounded-lg"
+                                    >
+                                        الانتقال لصفحة المعلومات الشخصية
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="border-t border-gray-500/20 mt-8 mb-12" />
 

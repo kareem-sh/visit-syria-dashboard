@@ -9,11 +9,11 @@ import logoutIcon from "@/assets/icons/sidebar/logout.svg";
 import LogOutDialog from "@/components/dialog/LogOutDialog.jsx";
 
 const Sidebar = () => {
-    const { user, logout, loading, isAdmin, isUser } = useAuth();
+    const { user: authUser, logout, loading, isAdmin, isUser } = useAuth();
     const { isSidebarOpen } = useSidebar();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    if (!user) return null;
+    if (!authUser) return null;
 
     const isTabletOrSmaller = window.matchMedia("(max-width: 1024px)").matches;
 
@@ -23,6 +23,12 @@ const Sidebar = () => {
         setIsDialogOpen(false);
     };
     const handleCloseDialog = () => setIsDialogOpen(false);
+
+    // Disable sidebar if: regular user, pending status, or rejected
+    const isDisabled =
+        isUser ||
+        authUser?.company?.status === "في الانتظار" ||
+        authUser?.status === "reject";
 
     return (
         <>
@@ -59,47 +65,44 @@ const Sidebar = () => {
                         {/* Menu Items */}
                         <nav className={`w-full ${isAdmin || isUser ? "space-y-4" : "space-y-0.5"}`}>
                             {sidebarMenu
-                                .filter((item) => item.roles.includes(user.role))
-                                .map((item) => {
-                                    const disabled = isUser; // greyed-out for user role
-                                    return (
-                                        <NavLink
-                                            key={item.to}
-                                            to={disabled ? "#" : item.to}
-                                            onClick={(e) => disabled && e.preventDefault()}
-                                            className={({ isActive }) =>
-                                                `h-12 flex items-center transition-all duration-200 border-l-4 ${
-                                                    disabled
-                                                        ? "border-transparent opacity-50 cursor-not-allowed pointer-events-none"
-                                                        : isActive
-                                                            ? "border-[var(--color-green)] font-body-bold-16 text-body-bold-16"
-                                                            : "border-transparent hover:border-[var(--color-green)]"
-                                                } ${isSidebarOpen ? "pr-6 gap-2" : "justify-center"}`
-                                            }
-                                        >
-                                            {({ isActive }) => (
-                                                <>
-                                                    <img
-                                                        src={isActive ? item.iconActive : item.icon}
-                                                        alt=""
-                                                        className="w-6 h-6"
-                                                    />
-                                                    {isSidebarOpen && (
-                                                        <span
-                                                            className={`text-[var(--text-title)] flex-1 text-right ${
-                                                                isActive
-                                                                    ? "text-body-bold-16 font-body-bold-16"
-                                                                    : "text-body-regular-16"
-                                                            }`}
-                                                        >
-                                                            {item.label}
-                                                        </span>
-                                                    )}
-                                                </>
-                                            )}
-                                        </NavLink>
-                                    );
-                                })}
+                                .filter((item) => item.roles.includes(authUser.role))
+                                .map((item) => (
+                                    <NavLink
+                                        key={item.to}
+                                        to={isDisabled ? "#" : item.to}
+                                        onClick={(e) => isDisabled && e.preventDefault()}
+                                        className={({ isActive }) =>
+                                            `h-12 flex items-center transition-all duration-200 border-l-4 ${
+                                                isDisabled
+                                                    ? "border-transparent opacity-50 cursor-not-allowed pointer-events-none"
+                                                    : isActive
+                                                        ? "border-[var(--color-green)] font-body-bold-16 text-body-bold-16"
+                                                        : "border-transparent hover:border-[var(--color-green)]"
+                                            } ${isSidebarOpen ? "pr-6 gap-2" : "justify-center"}`
+                                        }
+                                    >
+                                        {({ isActive }) => (
+                                            <>
+                                                <img
+                                                    src={isActive ? item.iconActive : item.icon}
+                                                    alt=""
+                                                    className="w-6 h-6"
+                                                />
+                                                {isSidebarOpen && (
+                                                    <span
+                                                        className={`text-[var(--text-title)] flex-1 text-right ${
+                                                            isActive
+                                                                ? "text-body-bold-16 font-body-bold-16"
+                                                                : "text-body-regular-16"
+                                                        }`}
+                                                    >
+                                                        {item.label}
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
+                                    </NavLink>
+                                ))}
                         </nav>
                     </div>
 

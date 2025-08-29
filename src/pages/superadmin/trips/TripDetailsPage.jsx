@@ -1,22 +1,28 @@
 import React, { useRef, useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+
 import ImageSection from "@/components/common/ImageSection";
 import CommentsSection from "@/components/common/CommentsSection";
 import TripInfoCard from "@/components/common/TripInfoCard.jsx";
 import DayDetails from "@/components/common/DayDetails";
-import { getTripById } from "@/services/trips/trips"; // Import the API function directly
+import Bookings from "@/components/common/Booking.jsx";
+import GoldCircularProgress from "@/components/common/GoldCircularProgress.jsx";
+import { PageSkeleton } from "@/components/common/PageSkeleton.jsx"; // Import skeleton
+import { useAuth } from "@/contexts/AuthContext.jsx"; // Import useAuth
+import { getTripById, tripBookings } from "@/services/trips/trips"; // Keep getTripById import
 
 // Lazy load the TripMap component
 const TripMap = React.lazy(() => import("@/components/common/TripMap"));
 
-const TripDetailsPage = ({ type = "event" }) => {
+const TripDetailsPage = ({ type = "trip" }) => {
     const { id } = useParams();
     const imageRef = useRef(null);
     const [imageHeight, setImageHeight] = useState(0);
     const queryClient = useQueryClient();
+    const { isAdmin } = useAuth(); // Get admin status
 
-    // Use React Query directly instead of the custom hook
+    // ✅ Trip details
     const { data: tripData, isLoading, error, isFetching } = useQuery({
         queryKey: ['trip', id],
         queryFn: async () => {
@@ -31,25 +37,31 @@ const TripDetailsPage = ({ type = "event" }) => {
             }
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 minutes cache
-        // Don't read from any other cache, always fetch from API
+        staleTime: 5 * 60 * 1000,
         initialData: undefined,
-        // Prevent any cache sharing with trips list
         structuralSharing: (oldData, newData) => newData,
     });
 
-    // Mock trip path data for testing (Damascus to Aleppo)
+    // ✅ Trip bookings - Only fetch if user is admin
+    const { data: bookings = [], isLoading: bookingsLoading } = useQuery({
+        queryKey: ['tripBookings', id],
+        queryFn: () => tripBookings(id),
+        enabled: !!id && isAdmin, // Only enable if user is admin
+        refetchOnWindowFocus: false,
+    });
+
+    // Keep your existing mock trip path
     const mockTripPath = {
         markers: [
-            { lat: 33.5138, lng: 36.2765, title: "ساحة الأمويين" }, // Umayyad Square
-            { lat: 33.5074, lng: 36.2988, title: "جامعة دمشق" }   // Damascus University
+            { lat: 33.5138, lng: 36.2765, title: "ساحة الأمويين" },
+            { lat: 33.5074, lng: 36.2988, title: "جامعة دمشق" }
         ],
         route: [
-            { lat: 33.5138, lng: 36.2765 }, // start - Umayyad Square
-            { lat: 33.5125, lng: 36.2820 }, // Shukri al-Quwatli Street
-            { lat: 33.5109, lng: 36.2885 }, // Near Victoria Bridge
-            { lat: 33.5090, lng: 36.2930 }, // Baramkeh area
-            { lat: 33.5074, lng: 36.2988 }  // end - Damascus University
+            { lat: 33.5138, lng: 36.2765 },
+            { lat: 33.5125, lng: 36.2820 },
+            { lat: 33.5109, lng: 36.2885 },
+            { lat: 33.5090, lng: 36.2930 },
+            { lat: 33.5074, lng: 36.2988 }
         ]
     };
 
@@ -65,14 +77,9 @@ const TripDetailsPage = ({ type = "event" }) => {
         return () => window.removeEventListener("resize", measure);
     }, [tripData?.images]);
 
-    // Show loading state
+    // Use PageSkeleton for initial loading state
     if (isLoading || isFetching) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green"></div>
-                <span className="ml-3">جاري تحميل بيانات الرحلة...</span>
-            </div>
-        );
+        return <PageSkeleton rows={8} />;
     }
 
     if (error) {
@@ -126,7 +133,6 @@ const TripDetailsPage = ({ type = "event" }) => {
 
                 {/* Product Info Card and Day Details */}
                 <div className="flex flex-col lg:flex-row gap-4 w-full items-stretch">
-                    {/* Product Info Card */}
                     <div className="lg:w-[60%] w-full flex">
                         <TripInfoCard
                             title={tripData.name}
@@ -145,7 +151,6 @@ const TripDetailsPage = ({ type = "event" }) => {
                         />
                     </div>
 
-                    {/* Day Details */}
                     {tripData.timelines && tripData.timelines.length > 0 && (
                         <div className="flex-1 w-full flex flex-col">
                             <h3 className="text-h1-bold-22 mb-2">جدول الرحلات</h3>
@@ -172,6 +177,19 @@ const TripDetailsPage = ({ type = "event" }) => {
                         />
                     </Suspense>
                 </div>
+
+                {/* ✅ Bookings Section - Only show if user is admin */}
+                {isAdmin && (
+                    <div className="w-full" dir="rtl">
+                        {bookingsLoading ? (
+                            <div className="flex justify-center items-center p-8">
+                                <GoldCircularProgress color="#10b981" />
+                            </div>
+                        ) : (
+                            <Bookings data={bookings} />
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

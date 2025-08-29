@@ -195,3 +195,30 @@ export const logoutUser = async () => {
 
     }
 }
+
+
+export const createCompany = async (formData) => {
+    try {
+        const data = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+            if (key === "documents" && Array.isArray(value)) {
+                value.forEach((doc, index) => {
+                    data.append(`documents[${index}]`, doc.file || doc);
+                });
+            } else if (key === "image" && value) {
+                data.append(key, value);
+            } else if (value !== undefined && value !== null) {
+                data.append(key, value);
+            }
+        });
+        const res = await apiClient.post("/auth/setAdminProfile", data, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        return res.data;
+    } catch (err) {
+        console.error("Error creating company:", err.response?.data || err);
+        throw err;
+    }
+};

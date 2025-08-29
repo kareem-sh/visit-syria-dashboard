@@ -81,3 +81,25 @@ export const changeCompanyStatus = async (companyId, status, reason = null) => {
         throw err;
     }
 };
+
+// Get earnings for the current year (per month)
+export const getEarningsThisYear = async () => {
+    try {
+        const res = await apiClient.get("/earningThisYearA");
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching earnings data:", err.response?.data || err);
+        throw err;
+    }
+};
+
+// Get ratings for the current year (per month)
+export const getRatingsThisYear = async () => {
+    try {
+        const res = await apiClient.get("/ratingThisYearA");
+        return res.data;
+    } catch (err) {
+        console.error("Error fetching ratings data:", err.response?.data || err);
+        throw err;
+    }
+};
