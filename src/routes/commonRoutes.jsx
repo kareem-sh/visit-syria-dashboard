@@ -5,6 +5,7 @@ import CitySection from "@/pages/superadmin/Places/CitySection.jsx";
 import PlaceDetailsPage from "@/pages/superadmin/Places/PlaceDetailsPage.jsx";
 import SupportDetails from "@/pages/superadmin/support/Support_details.jsx";
 import Trips from "@/pages/superadmin/dashboard-status/Trips.jsx";
+import Search from "@/pages/superadmin/search/Search.jsx";
 
 const commonRoutes = [
     { path: "/trips/:id", element: <TripDetailsPage /> },
@@ -13,7 +14,7 @@ const commonRoutes = [
     { path: "/places/cities/:cityname", element: <CityDetails /> },
     { path: "/places/cities/:cityname/:section", element: <CitySection /> },
     { path: "/places/cities/:cityname/:section/:id", element: <PlaceDetailsPage /> },
-
+    { path: "/search", element: <Search /> },
     { path: "/support/:type", element: <SupportDetails /> },
 ];
 

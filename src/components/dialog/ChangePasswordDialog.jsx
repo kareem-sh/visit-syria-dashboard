@@ -1,132 +1,102 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { X, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
-const ChangePasswordDialog = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState(1);
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+const ChangePasswordDialog = ({ onBack, onSubmit, onClose }) => {
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  if (!isOpen) return null;
-
-  const handleNext = () => {
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
-      console.log("تم تغيير كلمة المرور:", password);
-      onClose();
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit({ newPassword, confirmPassword });
     }
-  };
 
-  const handleOtpChange = (value, index) => {
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 left-4 text-2xl text-gray-700 hover:text-gray-900"
-        >
-          ✕
-        </button>
-
-        {/* Step 1: Email */}
-        {step === 1 && (
-          <div dir="rtl">
-            <h2 className="text-green-600 text-2xl font-bold mb-2">
-              تغيير كلمة المرور
-            </h2>
-            <p className="text-gray-600 mb-6">
-              أدخل بريدك الإلكتروني وسيتم إرسال رمز التحقق لإعادة تعيين كلمة المرور
-            </p>
-            <input
-              type="email"
-              placeholder="Email*"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 mb-6"
-            />
+    return (
+        <div dir="rtl" className="bg-white p-8 z-[100000] rounded-2xl shadow-lg w-full max-w-md absolute animate-fade-in">
+            {/* Close Button */}
             <button
-              onClick={handleNext}
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition"
+                onClick={onClose}
+                className="absolute top-5 left-5 text-gray-500 hover:text-gray-800 transition-colors"
             >
-              التالي &lt;
+                <X size={24} />
             </button>
-          </div>
-        )}
 
-        {/* Step 2: OTP */}
-        {step === 2 && (
-          <div dir="rtl">
-            <h2 className="text-green-600 text-2xl font-bold mb-2">
-              تغيير كلمة المرور
-            </h2>
-            <p className="text-gray-600 mb-6">
-              تم إرسال رمز التحقق إلى بريدك الإلكتروني، يرجى إدخال الرمز لإكمال العملية بنجاح
-            </p>
-            <div className="flex justify-center gap-4 mb-6">
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleOtpChange(e.target.value, i)}
-                  className="w-12 h-12 text-center border rounded-md text-lg"
-                />
-              ))}
+            {/* Header */}
+            <div className="text-center mb-8 flex items-center justify-center">
+                <h2 className="text-2xl font-bold text-gray-800">تغيير كلمة المرور</h2>
+                <button
+                    onClick={onBack}
+                    className="text-gray-600 mr-3 hover:text-gray-800 transition-colors"
+                >
+                    <ArrowLeft size={30} />
+                </button>
             </div>
-            <button
-              onClick={handleNext}
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition"
-            >
-              التالي &lt;
-            </button>
-            <p className="text-gray-400 text-sm mt-4 text-center">
-              إعادة الإرسال: 30:00
-            </p>
-          </div>
-        )}
 
-        {/* Step 3: New Password */}
-        {step === 3 && (
-          <div dir="rtl">
-            <h2 className="text-green-600 text-2xl font-bold mb-2">
-              تغيير كلمة المرور
-            </h2>
-            <p className="text-gray-600 mb-6">
-              يرجى إدخال كلمة مرور جديدة لحسابك
+            <p className="text-center text-gray-600 mb-6 text-body-regular-16">
+                يرجى إدخال كلمة مرور جديدة لحسابك
             </p>
-            <input
-              type="password"
-              placeholder="New Password*"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 mb-4"
-            />
-            <input
-              type="password"
-              placeholder="Confirm New Password*"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 mb-6"
-            />
-            <button
-              onClick={handleNext}
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition"
-            >
-              إعادة &lt;
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+
+            <form onSubmit={handleSubmit}>
+                {/* New Password Field */}
+                <div className="mb-4 relative">
+                    <label className="block text-right text-body-bold-16 text-gray-700 mb-2">
+                        كلمة المرور الجديدة*
+                    </label>
+                    <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="كلمة المرور الجديدة"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green text-right placeholder-gray-400"
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute left-3 top-11 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        {showNewPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                    </button>
+                </div>
+
+                <p className="text-right text-xs text-gray-500 mb-4 -mt-2">
+                    يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة ورموز مميزة
+                </p>
+
+                {/* Confirm Password Field */}
+                <div className="mb-6 relative">
+                    <label className="block text-right text-body-bold-16 text-gray-700 mb-2">
+                        تأكيد كلمة المرور الجديدة*
+                    </label>
+                    <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="تأكيد كلمة المرور الجديدة"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green text-right placeholder-gray-400"
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute left-3 top-11 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        {showConfirmPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                    </button>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                    type="submit"
+                    className="w-full bg-green text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                    <span>تأكيد</span>
+                    <ArrowLeft size={20} />
+                </button>
+            </form>
+        </div>
+    );
 };
 
 export default ChangePasswordDialog;

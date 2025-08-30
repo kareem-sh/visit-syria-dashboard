@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSidebar } from "@/contexts/SidebarContext.jsx";
 import { useAuth } from "@/hooks/useAuth.jsx";
 import { useNavigate } from "react-router-dom";
+import { getAllUnreadNotifications, getAllReadNotifications, destroyNotification } from "@/services/notification/notification.js";
 import menuIcon from "@/assets/icons/sidebar/Sidebar 1.svg";
-import flagIcon from "@/assets/icons/sidebar/flag.svg";
 import searchIcon from "@/assets/icons/sidebar/search.svg";
 import bellIcon from "@/assets/icons/sidebar/Notiifcations Fill.svg";
 import NotificationIcon from "@/assets/icons/common/notification_icon.svg";
@@ -21,58 +22,99 @@ const Topbar = () => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showSearchScreen, setShowSearchScreen] = useState(false);
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 2, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 3, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 4, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 5, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 6, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 7, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-    { id: 8, title: 'عطل طارئ', message: 'يوجد عطل في السيرفرات. نعمل على إصلاحه.' },
-  ]);
+  const notificationsRef = useRef(null);
+
+  // React Query for unread notifications
+  const { data: unreadNotificationsData, isLoading: unreadLoading, refetch: refetchUnread } = useQuery({
+    queryKey: ['unreadNotifications'],
+    queryFn: getAllUnreadNotifications,
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 0,
+  });
+
+  // React Query for read notifications
+  const { data: readNotificationsData, isLoading: readLoading, refetch: refetchRead } = useQuery({
+    queryKey: ['readNotifications'],
+    queryFn: getAllReadNotifications,
+    enabled: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Delete notification mutation
+  const deleteNotificationMutation = useMutation({
+    mutationFn: destroyNotification,
+    onSuccess: () => {
+      // Refetch both after deletion
+      refetchUnread();
+      refetchRead();
+    },
+  });
+
+  const unreadNotifications = unreadNotificationsData?.data?.notifications || [];
+  const readNotifications = readNotificationsData?.data?.notifications || [];
+  const unreadCount = unreadNotifications.length;
 
   const isTabletOrSmaller = window.matchMedia("(max-width: 1024px)").matches;
 
-  // Get display name based on user type and available data
+  // Get display name
   const getDisplayName = () => {
     if (isAdmin && authUser?.company) {
-      // For admin users with company data
       return authUser.company.name_of_company || authUser.company.name_of_owner || authUser.name || "أحمد محسن";
     } else if (authUser?.name) {
-      // For regular users with name
       return authUser.name;
     } else {
-      // Fallback to default
       return "أحمد محسن";
     }
   };
 
   const displayName = getDisplayName();
-
-  // Check if bell icon should be shown
   const shouldShowBellIcon = isSuperAdmin || (isAdmin && authUser?.company.status === "فعالة");
 
-  const handleToggleNotifications = () => {
-    if (!isUser) setShowNotifications(!showNotifications);
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
+  const handleToggleNotifications = async () => {
+    if (isUser) return;
+
+    if (!showNotifications) {
+      await refetchRead();
+    }
+
+    setShowNotifications(!showNotifications);
   };
 
   const handleRemoveNotification = (id) => {
-    setNotifications(notifications.filter(notification => notification.id !== id));
+    deleteNotificationMutation.mutate(id);
   };
 
   const handleClearAllNotifications = () => {
-    setNotifications([]);
+    // Delete all notifications one by one
+    readNotifications.forEach(notification => {
+      deleteNotificationMutation.mutate(notification.id);
+    });
   };
 
   const handleProfileClick = () => {
-    if (isUser) return; // Don't do anything for regular users
+    if (isUser) return;
 
-    // If user is admin and status is "فعالة", navigate to profile
     if (isAdmin && authUser?.company.status === "فعالة") {
-      navigate('/profile'); // Navigate to profile page
+      navigate('/profile');
     } else {
-      setShowProfileDialog(true); // Show contact us dialog for other cases
+      setShowProfileDialog(true);
     }
   };
 
@@ -109,7 +151,7 @@ const Topbar = () => {
                 placeholder="البحث..."
                 onFocus={() => !isUser && setShowSearchScreen(true)}
                 className={`w-full text-sm text-grey-800 bg-grey-100 rounded-xl focus:outline-none ${
-                    isUser ? "cursor-not-allowed opacity-50" : ""
+                    isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                 }`}
                 style={{
                   height: "44px",
@@ -123,7 +165,7 @@ const Topbar = () => {
         {/* Mobile search icon */}
         {isTabletOrSmaller && (
             <div className="md:hidden flex items-center">
-              <button disabled={isUser}>
+              <button disabled={isUser} className={isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
                 <img src={searchIcon} alt="search" className="w-6 h-6 opacity-50" />
               </button>
             </div>
@@ -131,15 +173,19 @@ const Topbar = () => {
 
         {/* Right section */}
         <div className="flex items-center gap-4 sm:gap-6">
-          {/* Notifications - Only show for superadmin or admin with active status */}
+          {/* Notifications */}
           {shouldShowBellIcon && (
-              <div className="relative">
-                <button onClick={handleToggleNotifications} disabled={isUser} className={`${isUser ? "cursor-not-allowed opacity-50" : ""}`}>
+              <div className="relative" ref={notificationsRef}>
+                <button
+                    onClick={handleToggleNotifications}
+                    disabled={isUser}
+                    className={`${isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                >
                   <img src={bellIcon} alt="notifications" className="w-6 h-6" />
-                  {notifications.length > 0 && (
+                  {unreadCount > 0 && (
                       <span className="absolute top-0 right-0 w-4 h-4 text-[10px] text-white bg-red-500 rounded-full flex items-center justify-center">
-                  {notifications.length}
-                </span>
+                        {unreadCount}
+                      </span>
                   )}
                 </button>
 
@@ -150,15 +196,22 @@ const Topbar = () => {
                     >
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold text-lg">قائمة الإشعارات</h3>
-                        <button
-                            onClick={handleClearAllNotifications}
-                            className="text-gray-500 hover:text-red-500 text-sm"
-                        >
-                          مسح الكل
-                        </button>
+                        {readNotifications.length > 0 && (
+                            <button
+                                onClick={handleClearAllNotifications}
+                                className="text-gray-500 hover:text-red-500 text-sm cursor-pointer"
+                                disabled={deleteNotificationMutation.isLoading}
+                            >
+                              {deleteNotificationMutation.isLoading ? 'جاري المسح...' : 'مسح الكل'}
+                            </button>
+                        )}
                       </div>
 
-                      {notifications.length === 0 ? (
+                      {readLoading ? (
+                          <div className="text-center text-gray-500 py-4">
+                            جاري التحميل...
+                          </div>
+                      ) : readNotifications.length === 0 ? (
                           <div className="text-center text-gray-500 py-4">
                             <img
                                 src={NoNotification}
@@ -168,7 +221,7 @@ const Topbar = () => {
                           </div>
                       ) : (
                           <ul className="space-y-4 max-h-[400px] overflow-y-auto">
-                            {notifications.map((notification) => (
+                            {readNotifications.map((notification) => (
                                 <li
                                     key={notification.id}
                                     className="flex items-start justify-between p-3 rounded-lg shadow-sm"
@@ -179,14 +232,15 @@ const Topbar = () => {
                                         alt="icon"
                                         className="w-[50px] h-[50px] flex-shrink-0 object-contain"
                                     />
-                                    <div>
-                                      <h4 className="font-semibold text-sm">{notification.title}</h4>
-                                      <p className="text-xs text-gray-600">{notification.message}</p>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="font-semibold text-sm truncate">{notification.title}</h4>
+                                      <p className="text-xs text-gray-600 truncate">{notification.message}</p>
                                     </div>
                                   </div>
                                   <button
                                       onClick={() => handleRemoveNotification(notification.id)}
-                                      className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                                      className="text-gray-400 hover:text-red-500 flex-shrink-0 cursor-pointer ml-2"
+                                      disabled={deleteNotificationMutation.isLoading}
                                   >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -210,12 +264,6 @@ const Topbar = () => {
               </div>
           )}
 
-          {/* Language - Hidden for all users */}
-          {/* <div className="hidden sm:flex items-center gap-2 text-sm text-grey-800">
-            <img src={flagIcon} alt="flag" className="w-5 h-5" />
-            العربية
-          </div> */}
-
           {/* User Info */}
           <div
               className={`flex items-center gap-2 text-sm text-grey-800 ${
@@ -236,7 +284,7 @@ const Topbar = () => {
           </div>
         </div>
 
-        {/* Profile Dialog - Only show if user is not an admin with active status */}
+        {/* Profile Dialog */}
         {showProfileDialog && !isUser && !(isAdmin && authUser?.company.status === "فعالة") && (
             <ContactUs onClose={() => setShowProfileDialog(false)} />
         )}

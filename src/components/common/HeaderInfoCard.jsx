@@ -1,7 +1,7 @@
 // src/components/common/HeaderInfoCard.jsx
 import React from 'react';
 import { Star, Calendar } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext.jsx'; // Import useAuth hook
+import { useAuth } from '@/contexts/AuthContext.jsx';
 
 // Import all necessary icons
 import CompanyProfile from '@/assets/images/Company Profile.svg';
@@ -23,9 +23,8 @@ export default function HeaderInfoCard({
                                            date,
                                            status,
                                            onStatusChangeClick,
-                                           showStatusButton = true, // Add new prop to control button visibility
                                        }) {
-    const { isAdmin, isSuperAdmin } = useAuth(); // Get admin and super admin status
+    const { isSuperAdmin } = useAuth(); // Get super admin status from context
 
     if (!title) return null;
 
@@ -50,17 +49,6 @@ export default function HeaderInfoCard({
 
     // Check if user is banned
     const isBanned = status === 'حظر مؤقت' || status === 'حظر نهائي';
-
-    // Handle button click based on user role
-    const handleButtonClick = () => {
-        if (isSuperAdmin) {
-            // Super admin - open status change dialog
-            onStatusChangeClick();
-        } else if (isAdmin) {
-            // Admin - do nothing for now (will be implemented later)
-            console.log("تغيير كلمة المرور button clicked - functionality to be implemented");
-        }
-    };
 
     return (
         <div className="bg-white px-10 py-6 min-h-[288px] rounded-2xl shadow-sm w-full flex items-center justify-between flex-wrap gap-4" dir="rtl">
@@ -111,13 +99,13 @@ export default function HeaderInfoCard({
                             {currentStatus.text}
                         </span>
 
-                        {/* Show appropriate button based on user role */}
-                        {showStatusButton && (
+                        {/* Show button only for super admin */}
+                        {isSuperAdmin && (
                             <button
-                                onClick={handleButtonClick}
+                                onClick={onStatusChangeClick}
                                 className="w-full cursor-pointer bg-green text-white px-5 py-3 rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200"
                             >
-                                {isSuperAdmin ? 'تغيير حالة الشركة' : 'تغيير كلمة المرور'}
+                                تغيير حالة الشركة
                             </button>
                         )}
                     </>
@@ -126,21 +114,24 @@ export default function HeaderInfoCard({
                 {/* User Status and Button (Side-by-side) */}
                 {entityType === 'user' && (
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={onStatusChangeClick}
-                            className={`flex items-center justify-center cursor-pointer gap-2 min-w-[150px] rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200 ring-2 px-5 py-3 ${
-                                isBanned
-                                    ? 'ring-green text-green'
-                                    : 'ring-red text-red'
-                            }`}
-                        >
-                            {isBanned ? 'إلغاء الحظر' : 'حظر'}
-                            <img
-                                src={isBanned ? doneIcon : BannedStroke}
-                                alt={isBanned ? 'إلغاء الحظر' : 'حظر المستخدم'}
-                                className="w-5 h-5"
-                            />
-                        </button>
+                        {/* Show user ban button only for super admin */}
+                        {isSuperAdmin && (
+                            <button
+                                onClick={onStatusChangeClick}
+                                className={`flex items-center justify-center cursor-pointer gap-2 min-w-[150px] rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200 ring-2 px-5 py-3 ${
+                                    isBanned
+                                        ? 'ring-green text-green'
+                                        : 'ring-red text-red'
+                                }`}
+                            >
+                                {isBanned ? 'إلغاء الحظر' : 'حظر'}
+                                <img
+                                    src={isBanned ? doneIcon : BannedStroke}
+                                    alt={isBanned ? 'إلغاء الحظر' : 'حظر المستخدم'}
+                                    className="w-5 h-5"
+                                />
+                            </button>
+                        )}
                         <span className={`flex items-center justify-center min-w-[150px] px-5 py-3 text-center text-md font-semibold rounded-full ${currentStatus.bg} ${currentStatus.text_color}`}>
                             {currentStatus.text}
                             {currentStatus.icon && <img src={currentStatus.icon} alt={currentStatus.text} className="mr-1 w-6 h-6" />}
