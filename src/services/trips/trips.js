@@ -232,3 +232,63 @@ export const tripBookings = async (tripId) => {
         throw err;
     }
 };
+
+export const deleteTrip = async (tripId) => {
+    try {
+        const response = await apiClient.delete(`/trips/${tripId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting trip:", error);
+        throw error;
+    }
+};
+
+// Cancel trip - POST /trips/cancel/{id}
+export const cancelTrip = async (tripId) => {
+    try {
+        const response = await apiClient.post(`/trips/cancel/${tripId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error canceling trip:", error);
+        throw error;
+    }
+};
+
+// Update trip - POST /trip/update/{id}
+export const updateTrip = async (tripId, tripData) => {
+    try {
+        // Create FormData for file uploads
+        const formData = new FormData();
+
+        // Append basic fields
+        if (tripData.name) formData.append('name', tripData.name);
+        if (tripData.description) formData.append('description', tripData.description);
+
+        // Append new images (files)
+        if (tripData.images && Array.isArray(tripData.images)) {
+            tripData.images.forEach((image, index) => {
+                if (image instanceof File) {
+                    formData.append(`images[${index}]`, image);
+                }
+            });
+        }
+
+        // Append old images (URLs or IDs)
+        if (tripData.old_images && Array.isArray(tripData.old_images)) {
+            tripData.old_images.forEach((image, index) => {
+                formData.append(`old_images[${index}]`, image);
+            });
+        }
+
+        const response = await apiClient.post(`/trip/update/${tripId}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        return response.data;
+    } catch (error) {
+        console.error("Error updating trip:", error);
+        throw error;
+    }
+};

@@ -45,6 +45,7 @@ const CommonTable = ({
                 text = "text-green";
                 break;
             case "تم الإلغاء":
+            case "تم الالغاء":
             case "مرفوض":
             case "قيد الحذف":
                 icon = canceledIcon;
@@ -57,6 +58,7 @@ const CommonTable = ({
                 text = "text-red-600";
                 break;
             case "جارية حالياً":
+            case "جارية حاليا":
             case "في الانتظار":
                 icon = inprogressIcon;
                 bg = "bg-gold-500/10";
@@ -64,6 +66,7 @@ const CommonTable = ({
                 break;
             case "حظر مؤقت":
             case "تم الانذار":
+            case "تم الإنذار":
                 icon = Warning;
                 bg = "bg-gold-500/10";
                 text = "text-gold";

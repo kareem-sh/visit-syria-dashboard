@@ -6,62 +6,15 @@ import Table from "@/components/common/Table.jsx";
 import Chart from "@/components/common/Chart.jsx";
 import RatingTable from "@/components/common/RatingTable.jsx";
 import { getTrips } from "@/services/trips/trips";
+import { getEarning, getUser, getRating, topCompanies, getTopPlaces } from "@/services/statistics/statistics.js";
 import moneyIcon from "@/assets/icons/stats card/Stats Card Icons money.svg";
 import userIcon from "@/assets/icons/stats card/Stats Card Icons user.svg";
 import starIcon from "@/assets/icons/stats card/Stats Card Icons rating.svg";
-
-const statsData = [
-  {
-    title: "الأرباح",
-    value: "$20,300",
-    subtitle: "زيادة عن الأسبوع الماضي",
-    trend: "8%",
-    trendDirection: "up",
-    iconSrc: moneyIcon,
-    bgColor: "bg-green",
-    textColor: "text-white",
-    route: "/profits",
-  },
-  {
-    title: "المستخدمين",
-    value: "3008",
-    subtitle: "نقصان عن الأمس",
-    trend: "8%",
-    trendDirection: "down",
-    iconSrc: userIcon,
-    bgColor: "bg-white",
-    textColor: "text-black",
-    route: "/users",
-  },
-  {
-    title: "التقييمات",
-    value: "10000",
-    subtitle: "نقصان عن الأمس",
-    trend: "8%",
-    trendDirection: "up",
-    iconSrc: starIcon,
-    bgColor: "bg-white",
-    textColor: "text-black",
-  },
-];
-
-const columns = [
-  { header: "الرقم التعريفي", accessor: "id" },
-  { header: "اسم الرحلة", accessor: "name" },
-  { header: "اسم الشركة", accessor: "companyName" },
-  { header: "التاريخ", accessor: "start_date" },
-  { header: "الحالة", accessor: "status" },
-];
-
-const topPlacesData = [
-  { id: 1, name: "مطعم الشام", rating: 4.8 },
-  { id: 2, name: "فندق الأموي", rating: 4.6 },
-  { id: 3, name: "مقهى النور", rating: 4.2 },
-];
+import { PageSkeleton } from "@/components/common/PageSkeleton.jsx";
 
 const DashboardOverview = () => {
   // Use React Query for data fetching
-  const { data: tripsData, isLoading, error } = useQuery({
+  const { data: tripsData, isLoading: tripsLoading, error: tripsError } = useQuery({
     queryKey: ['trips'],
     queryFn: async () => {
       console.time('React Query API Call');
@@ -83,13 +36,112 @@ const DashboardOverview = () => {
         throw err;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 5 * 60 * 1000,
   });
 
-  const trips = tripsData?.trips || [];
+  // Fetch statistics data
+  const { data: earningsData, isLoading: earningsLoading } = useQuery({
+    queryKey: ['earnings'],
+    queryFn: getEarning,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUser,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: ratingsData, isLoading: ratingsLoading } = useQuery({
+    queryKey: ['ratings'],
+    queryFn: getRating,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch top companies data
+  const { data: topCompaniesData, isLoading: topCompaniesLoading } = useQuery({
+    queryKey: ['topCompanies'],
+    queryFn: () => topCompanies('trip'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch top places data
+  const { data: topPlacesData, isLoading: topPlacesLoading } = useQuery({
+    queryKey: ['topPlaces'],
+    queryFn: getTopPlaces,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // State hooks - must be declared before any conditional returns
   const [currentFilter, setCurrentFilter] = useState("الكل");
   const [filteredData, setFilteredData] = useState([]);
   const [flattenedData, setFlattenedData] = useState([]);
+
+  // Show skeleton while loading - moved after all hooks
+  const isLoading = tripsLoading || earningsLoading || usersLoading || ratingsLoading ||
+      topCompaniesLoading || topPlacesLoading;
+
+  // Prepare stats data from API responses
+  const statsData = [
+    {
+      title: "الأرباح",
+      value: earningsData?.data?.earnings ? `$${earningsData.data.earnings.toFixed(2)}` : "$0",
+      subtitle: earningsData?.data?.changeFromLastWeek >= 0 ? "زيادة عن الأسبوع الماضي" : "نقصان عن الأسبوع الماضي",
+      trend: earningsData?.data?.changeFromLastWeek ? `${Math.abs(earningsData.data.changeFromLastWeek)}%` : "0%",
+      trendDirection: earningsData?.data?.changeFromLastWeek >= 0 ? "up" : "down",
+      iconSrc: moneyIcon,
+      bgColor: "bg-green",
+      textColor: "text-white",
+      route: "/profits",
+      isLoading: earningsLoading,
+    },
+    {
+      title: "المستخدمين",
+      value: usersData?.data?.users ? usersData.data.users.toString() : "0",
+      subtitle: usersData?.data?.changeFromLastDay >= 0 ? "زيادة عن الأمس" : "نقصان عن الأمس",
+      trend: usersData?.data?.changeFromLastDay ? `${Math.abs(usersData.data.changeFromLastDay)}%` : "0%",
+      trendDirection: usersData?.data?.changeFromLastDay >= 0 ? "up" : "down",
+      iconSrc: userIcon,
+      bgColor: "bg-white",
+      textColor: "text-black",
+      route: "/users",
+      isLoading: usersLoading,
+    },
+    {
+      title: "التقييمات",
+      value: ratingsData?.data?.ratings ? ratingsData.data.ratings.toString() : "0",
+      subtitle: ratingsData?.data?.changeFromLastDay >= 0 ? "زيادة عن الأمس" : "نقصان عن الأمس",
+      trend: ratingsData?.data?.changeFromLastDay ? `${Math.abs(ratingsData.data.changeFromLastDay)}%` : "0%",
+      trendDirection: ratingsData?.data?.changeFromLastDay >= 0 ? "up" : "down",
+      iconSrc: starIcon,
+      bgColor: "bg-white",
+      textColor: "text-black",
+      isLoading: ratingsLoading,
+    },
+  ];
+
+  const topCompaniesChartData = topCompaniesData?.data?.companies
+      ?.slice(0, 3)
+      .map(company => ({
+        label: company.name_of_company,
+        value: company.number_of_trips
+      })) || [];
+
+  const topCompanyLabels = topCompaniesChartData.map(item => item.label);
+  const topCompanyTrips = topCompaniesChartData.map(item => item.value);
+
+  // Prepare top places data for RatingTable
+  const formattedTopPlacesData = topPlacesData?.data?.places?.map((place, index) => ({
+    id: place.id,
+    name: place.name,
+    rating: place.rating,
+    city: place.city,
+    type: place.type,
+    image: place.image,
+    rank: index + 1
+  })) || [];
+
+  const trips = tripsData?.trips || [];
 
   // Flatten the data to include companyName field
   useEffect(() => {
@@ -97,7 +149,6 @@ const DashboardOverview = () => {
       const newData = trips.slice(0, 6);
       setFilteredData(newData);
 
-      // Create flattened data with companyName
       const flattened = newData.map(trip => ({
         ...trip,
         companyName: trip.company?.name || "غير محدد"
@@ -106,12 +157,8 @@ const DashboardOverview = () => {
 
       handleFilterChange(currentFilter, newData);
 
-      // Debug: Check filtered data
       console.log('Filtered Data:', newData);
       console.log('Flattened Data:', flattened);
-      newData.forEach((trip, index) => {
-        console.log(`Filtered Trip ${index + 1} company:`, trip.company?.name);
-      });
     }
   }, [trips, currentFilter]);
 
@@ -154,7 +201,6 @@ const DashboardOverview = () => {
 
     setFilteredData(newData);
 
-    // Update flattened data as well
     const flattened = newData.map(trip => ({
       ...trip,
       companyName: trip.company?.name || "غير محدد"
@@ -162,14 +208,24 @@ const DashboardOverview = () => {
     setFlattenedData(flattened);
   }, [trips]);
 
-  const topCompanyLabels = ["العقاد", "سوريا تورز", "الريحان"];
-  const topCompanyTrips = [10, 60, 20];
+  const columns = [
+    { header: "الرقم التعريفي", accessor: "id" },
+    { header: "اسم الرحلة", accessor: "name" },
+    { header: "اسم الشركة", accessor: "companyName" },
+    { header: "التاريخ", accessor: "start_date" },
+    { header: "الحالة", accessor: "status" },
+  ];
 
-  if (error) {
+  // Now we can check for loading after all hooks have been declared
+  if (isLoading) {
+    return <PageSkeleton rows={8} />;
+  }
+
+  if (tripsError) {
     return (
         <div className="space-y-8 px-4">
           <div className="text-red-500 text-center py-8">
-            خطأ في تحميل البيانات: {error.message}
+            خطأ في تحميل البيانات: {tripsError.message}
           </div>
         </div>
     );
@@ -194,7 +250,7 @@ const DashboardOverview = () => {
                 title="الرحلات"
                 currentFilter={currentFilter}
                 onFilterChange={handleFilterChange}
-                loading={isLoading}
+                loading={tripsLoading}
                 showSeeAll={true}
                 seeAllLink="/trips"
             />
@@ -213,6 +269,7 @@ const DashboardOverview = () => {
                     values={topCompanyTrips}
                     color="#2FB686"
                     label="عدد الرحلات"
+                    loading={topCompaniesLoading}
                 />
               </div>
             </div>
@@ -222,7 +279,10 @@ const DashboardOverview = () => {
               <h2 className="text-right text-h1-bold-24 mb-4 text-gray-700">
                 أفضل الأماكن
               </h2>
-              <RatingTable data={topPlacesData} />
+              <RatingTable
+                  data={formattedTopPlacesData}
+                  loading={topPlacesLoading}
+              />
             </div>
           </div>
         </div>

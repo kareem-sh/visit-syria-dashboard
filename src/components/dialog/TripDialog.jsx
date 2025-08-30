@@ -353,6 +353,7 @@ const TripDialog = ({
         if (mode === "reactivate") {
             setStep(3);
         } else {
+            // For create mode, don't include improvements
             const combined = prepareTripData(validImages, []);
             onSave(combined);
         }
@@ -372,15 +373,19 @@ const TripDialog = ({
             return;
         }
 
-        const improvs = improvementsText.split("\n").map(s => s.trim()).filter(Boolean);
+        // Only process improvements for reactivate mode
+        const improvs = mode === "reactivate"
+            ? improvementsText.split("\n").map(s => s.trim()).filter(Boolean)
+            : [];
+
         const combined = prepareTripData(validImages, improvs);
         onSave(combined);
     };
 
     // ---- Data preparation ----
-    const prepareTripData = (improvements = []) => {
+    const prepareTripData = (validImages, improvements = []) => {
         // The createTrip function expects a single 'images' array with File objects.
-        const filesToUpload = (basicInfo.images || []).filter(img => img instanceof File);
+        const filesToUpload = validImages.filter(img => img instanceof File);
 
         const cleanedTimelines = timelines.map((timeline, index) => ({
             day: index + 1,
@@ -398,11 +403,10 @@ const TripDialog = ({
         })).filter(timeline => timeline.sections && timeline.sections.length > 0);
 
         // Return the exact structure the API function needs
-        return {
+        const tripData = {
             ...basicInfo,
             images: filesToUpload, // CORRECTED: Use a single 'images' key with files.
             timelines: cleanedTimelines,
-            improvements: improvements,
             days: Number(basicInfo.days) || 1,
             tickets: Number(basicInfo.tickets) || 0,
             price: Number(basicInfo.price) || 0,
@@ -410,8 +414,14 @@ const TripDialog = ({
             discount_enabled: Boolean(basicInfo.discount_enabled),
             tags: Array.isArray(basicInfo.tags) ? basicInfo.tags : []
         };
-    };
 
+        // Only include improvements in reactivate mode
+        if (mode === "reactivate") {
+            tripData.improvements = improvements;
+        }
+
+        return tripData;
+    };
     // ---- JSX for steps ----
     const BasicStep = (
         <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40">

@@ -11,6 +11,7 @@ import { getTripsByCompanyId } from '@/services/trips/trips';
 import Skeleton from '@mui/material/Skeleton';
 import Box from '@mui/material/Box';
 import { toast } from 'react-toastify';
+import { useAuth } from '@/contexts/AuthContext.jsx'; // Import useAuth hook
 
 /**
  * Main page/component to display all details for a company.
@@ -21,6 +22,11 @@ export default function CompanyDetails() {
     const queryClient = useQueryClient();
     const [currentFilter, setCurrentFilter] = useState("الكل");
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+    const { user: authUser, isAdmin } = useAuth(); // Get auth user and admin status
+
+    // Determine which ID to use for fetching company data
+    // If user is admin and no ID in params, use auth user's ID
+    const companyId = id || (isAdmin && authUser?.company.id ? authUser.company.id : null);
 
     // Query for fetching company data - will use cache if available
     const {
@@ -29,10 +35,11 @@ export default function CompanyDetails() {
         isError: isErrorCompany,
         error: companyError,
     } = useQuery({
-        queryKey: ['company', id],
-        queryFn: () => getCompanyById(id),
+        queryKey: ['company', companyId],
+        queryFn: () => getCompanyById(companyId),
         staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
         cacheTime: 10 * 60 * 1000, // Cache for 10 minutes
+        enabled: !!companyId, // Only fetch if we have a company ID
     });
 
     // Extract company data from the response
@@ -41,16 +48,16 @@ export default function CompanyDetails() {
         return companyResponse.company || companyResponse;
     }, [companyResponse]);
 
-    // Query for fetching trips data - will always fetch fresh data
+    // Query for fetching trips data - will only fetch if user is not admin
     const {
         data: tripsResponse = [],
         isLoading: isLoadingTrips,
         isError: isErrorTrips,
         error: tripsError
     } = useQuery({
-        queryKey: ['companyTrips', id, currentFilter],
-        queryFn: () => getTripsByCompanyId(id, currentFilter !== "الكل" ? currentFilter : undefined),
-        enabled: !!id && !!companyData, // Only fetch trips if we have a company ID and company data
+        queryKey: ['companyTrips', companyId, currentFilter],
+        queryFn: () => getTripsByCompanyId(companyId, currentFilter !== "الكل" ? currentFilter : undefined),
+        enabled: !!companyId && !!companyData && !isAdmin, // Only fetch trips if we have a company ID, company data, and user is NOT admin
         staleTime: 2 * 60 * 1000, // Data is fresh for 2 minutes
         cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
@@ -73,16 +80,16 @@ export default function CompanyDetails() {
 
     // Mutation for updating company status with optimistic updates
     const updateStatusMutation = useMutation({
-        mutationFn: ({ status, reason }) => changeCompanyStatus(id, status, reason),
+        mutationFn: ({ status, reason }) => changeCompanyStatus(companyId, status, reason),
         onMutate: async ({ status, reason }) => {
             // Cancel any outgoing refetches to avoid overwriting our optimistic update
-            await queryClient.cancelQueries(['company', id]);
+            await queryClient.cancelQueries(['company', companyId]);
 
             // Snapshot the previous value
-            const previousCompany = queryClient.getQueryData(['company', id]);
+            const previousCompany = queryClient.getQueryData(['company', companyId]);
 
             // Optimistically update to the new value
-            queryClient.setQueryData(['company', id], (old) => {
+            queryClient.setQueryData(['company', companyId], (old) => {
                 if (!old) return old;
 
                 // Update the company status optimistically
@@ -106,7 +113,6 @@ export default function CompanyDetails() {
             // Invalidate and refetch all related queries to ensure we have fresh data
             queryClient.invalidateQueries(['allCompanies']);
 
-
             toast.success("تم تحديث حالة الشركة بنجاح");
             setIsStatusDialogOpen(false);
         },
@@ -115,7 +121,7 @@ export default function CompanyDetails() {
 
             // Roll back to the previous value on error
             if (context?.previousCompany) {
-                queryClient.setQueryData(['company', id], context.previousCompany);
+                queryClient.setQueryData(['company', companyId], context.previousCompany);
             }
 
             const errorMessage = error.response?.data?.message ||
@@ -125,15 +131,15 @@ export default function CompanyDetails() {
         },
         onSettled: () => {
             // Always refetch company data after error or success to ensure we're in sync
-            queryClient.invalidateQueries(['company', id]);
+            queryClient.invalidateQueries(['company', companyId]);
         }
     });
 
     // Function to open the dialog
     const handleStatusChangeClick = useCallback(() => {
-        console.log('Opening status dialog for company:', id);
+        console.log('Opening status dialog for company:', companyId);
         setIsStatusDialogOpen(true);
-    }, [id]);
+    }, [companyId]);
 
     // Function to handle the confirmation from the dialog
     const handleStatusConfirm = useCallback((newStatus, reason) => {
@@ -205,7 +211,7 @@ export default function CompanyDetails() {
     if (!companyData) {
         return (
             <div className="p-4 text-red-600 font-semibold">
-                لا توجد بيانات لل الشركة
+                لا توجد بيانات للشركة
             </div>
         );
     }
@@ -222,52 +228,56 @@ export default function CompanyDetails() {
                     date={companyData.founding_date}
                     status={companyData.status}
                     onStatusChangeClick={handleStatusChangeClick}
+                    // Hide status change button if user is viewing their own profile
+                    showStatusButton={!id && isAdmin}
                 />
                 <CompanyInfoCard data={companyData} />
 
-                {/* New Section for the Trips Table */}
-                <div className="mt-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 px-2">
-                        <h1 className="text-h1-bold-24 text-gray-800">الرحلات</h1>
-                        <SortFilterButton
-                            options={filterOptions.map(opt => opt.label)}
-                            selectedValue={filterOptions.find(opt => opt.value === currentFilter)?.label || "الكل"}
-                            position="left"
-                            onChange={(label) => {
-                                const matched = filterOptions.find(f => f.label === label);
-                                if (matched) handleFilterChange(matched.value);
-                            }}
-                        />
-                    </div>
+                {/* Trips Table Section - Only show if user is not admin */}
+                {!isAdmin && (
+                    <div className="mt-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 px-2">
+                            <h1 className="text-h1-bold-24 text-gray-800">الرحلات</h1>
+                            <SortFilterButton
+                                options={filterOptions.map(opt => opt.label)}
+                                selectedValue={filterOptions.find(opt => opt.value === currentFilter)?.label || "الكل"}
+                                position="left"
+                                onChange={(label) => {
+                                    const matched = filterOptions.find(f => f.label === label);
+                                    if (matched) handleFilterChange(matched.value);
+                                }}
+                            />
+                        </div>
 
-                    {isLoadingTrips ? (
-                        <Box sx={{ width: '100%' }}>
-                            {[...Array(5)].map((_, i) => (
-                                <Skeleton
-                                    key={i}
-                                    variant="rectangular"
-                                    width="100%"
-                                    height={50}
-                                    sx={{ mb: 1, borderRadius: 1 }}
-                                />
-                            ))}
-                        </Box>
-                    ) : isErrorTrips ? (
-                        <div className="p-4 text-red-600 font-semibold">
-                            فشل تحميل بيانات الرحلات: {tripsError.message}
-                        </div>
-                    ) : formattedTripsData.length === 0 ? (
-                        <div className="p-4 text-gray-600 text-center">
-                            لا توجد رحلات لهذه الشركة
-                        </div>
-                    ) : (
-                        <CommonTable
-                            columns={tableColumns}
-                            data={formattedTripsData}
-                            basePath={`companies/${id}/trips`}
-                        />
-                    )}
-                </div>
+                        {isLoadingTrips ? (
+                            <Box sx={{ width: '100%' }}>
+                                {[...Array(5)].map((_, i) => (
+                                    <Skeleton
+                                        key={i}
+                                        variant="rectangular"
+                                        width="100%"
+                                        height={50}
+                                        sx={{ mb: 1, borderRadius: 1 }}
+                                    />
+                                ))}
+                            </Box>
+                        ) : isErrorTrips ? (
+                            <div className="p-4 text-red-600 font-semibold">
+                                فشل تحميل بيانات الرحلات: {tripsError.message}
+                            </div>
+                        ) : formattedTripsData.length === 0 ? (
+                            <div className="p-4 text-gray-600 text-center">
+                                لا توجد رحلات لهذه الشركة
+                            </div>
+                        ) : (
+                            <CommonTable
+                                columns={tableColumns}
+                                data={formattedTripsData}
+                                basePath={`companies/${companyId}/trips`}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* The new dedicated dialog, correctly placed and managed */}

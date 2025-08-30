@@ -18,6 +18,7 @@ import {
     deleteSetting
 } from '@/services/support/supportApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageSkeleton } from '@/components/common/PageSkeleton.jsx'; // Import PageSkeleton
 
 /**
  * Card component for FAQ or Terms
@@ -104,7 +105,7 @@ const FAQOrTermsList = ({ type, onEdit, onDelete, data, isLoading, isSuperAdmin 
     const [selectedOption, setSelectedOption] = useState('tourism');
 
     if (isLoading) {
-        return <div className="mx-auto mt-6">Loading...</div>;
+        return <PageSkeleton rows={6} />; // Use PageSkeleton instead of simple loading text
     }
 
     const sectionTitle = type === 'privacy_policy' ? 'شروط الاستخدام و سياسة الخصوصية' : 'الأسئلة الشائعة';
@@ -265,6 +266,11 @@ const SupportDetails = () => {
             ? "يرجى إدخال نص الشرط الذي يوضح للمستخدمين و لشركات السياحة الامور السموحة و الممنوعة."
             : "ضف سؤالاً شائعًا مع الإجابة الخاصة به لتوفير معلومات مفيدة وسريعة للمستخدمين و شركات السياحة حول الخدمات أو الإجراءات.";
     const dialog_type = type === "privacy_policy" ? "policy" : "question";
+
+    // Show page skeleton while loading
+    if (isLoading) {
+        return <PageSkeleton rows={8} />;
+    }
 
     if (error) {
         return <div className="p-6 text-red-500">Error loading data: {error.message}</div>;

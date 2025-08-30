@@ -2,8 +2,9 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import CommonTable from "@/components/common/CommonTable";
-import { Star, Trash2, Loader, AlertCircle } from "lucide-react";
+import { Star, Trash2, AlertCircle } from "lucide-react";
 import { deleteSave, getSavedItems } from "@/services/places/placesApi";
+import { PageSkeleton } from "@/components/common/PageSkeleton.jsx";
 
 const SavedPlaces = () => {
     const [currentType, setCurrentType] = useState("restaurant");
@@ -112,13 +113,9 @@ const SavedPlaces = () => {
         tourist: "المواقع السياحية",
     };
 
+    // Show page skeleton while loading
     if (isLoading) {
-        return (
-            <div className="w-full p-4 flex flex-col items-center justify-center min-h-[400px]">
-                <Loader size={32} className="animate-spin text-emerald-500 mb-4" />
-                <p className="text-gray-600">جاري تحميل العناصر المحفوظة...</p>
-            </div>
-        );
+        return <PageSkeleton rows={8} />;
     }
 
     if (isError) {

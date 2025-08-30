@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSidebar } from "@/contexts/SidebarContext.jsx";
-import { useAuth } from "@/hooks/useAuth.jsx"; // <-- import useAuth
+import { useAuth } from "@/hooks/useAuth.jsx";
+import { useNavigate } from "react-router-dom";
 import menuIcon from "@/assets/icons/sidebar/Sidebar 1.svg";
 import flagIcon from "@/assets/icons/sidebar/flag.svg";
 import searchIcon from "@/assets/icons/sidebar/search.svg";
@@ -13,7 +14,8 @@ import SearchScreen from "@/pages/superadmin/search/Search.jsx";
 
 const Topbar = () => {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
-  const { isUser } = useAuth(); // check if role is user
+  const { isUser, user: authUser, isAdmin, isSuperAdmin } = useAuth();
+  const navigate = useNavigate();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -32,6 +34,25 @@ const Topbar = () => {
 
   const isTabletOrSmaller = window.matchMedia("(max-width: 1024px)").matches;
 
+  // Get display name based on user type and available data
+  const getDisplayName = () => {
+    if (isAdmin && authUser?.company) {
+      // For admin users with company data
+      return authUser.company.name_of_company || authUser.company.name_of_owner || authUser.name || "أحمد محسن";
+    } else if (authUser?.name) {
+      // For regular users with name
+      return authUser.name;
+    } else {
+      // Fallback to default
+      return "أحمد محسن";
+    }
+  };
+
+  const displayName = getDisplayName();
+
+  // Check if bell icon should be shown
+  const shouldShowBellIcon = isSuperAdmin || (isAdmin && authUser?.company.status === "فعالة");
+
   const handleToggleNotifications = () => {
     if (!isUser) setShowNotifications(!showNotifications);
   };
@@ -42,6 +63,17 @@ const Topbar = () => {
 
   const handleClearAllNotifications = () => {
     setNotifications([]);
+  };
+
+  const handleProfileClick = () => {
+    if (isUser) return; // Don't do anything for regular users
+
+    // If user is admin and status is "فعالة", navigate to profile
+    if (isAdmin && authUser?.company.status === "فعالة") {
+      navigate('/profile'); // Navigate to profile page
+    } else {
+      setShowProfileDialog(true); // Show contact us dialog for other cases
+    }
   };
 
   return showSearchScreen ? (
@@ -99,95 +131,97 @@ const Topbar = () => {
 
         {/* Right section */}
         <div className="flex items-center gap-4 sm:gap-6">
-          {/* Notifications */}
-          <div className="relative">
-            <button onClick={handleToggleNotifications} disabled={isUser} className={`${isUser ? "cursor-not-allowed opacity-50" : ""}`}>
-              <img src={bellIcon} alt="notifications" className="w-6 h-6" />
-              {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 text-[10px] text-white bg-red-500 rounded-full flex items-center justify-center">
-                {notifications.length}
-              </span>
-              )}
-            </button>
-
-            {showNotifications && !isUser && (
-                <div
-                    className="absolute top-[50px] left-5 w-[400px] bg-white rounded-lg shadow-lg z-50 p-4 animate-fade-in-down"
-                    dir="rtl"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg">قائمة الإشعارات</h3>
-                    <button
-                        onClick={handleClearAllNotifications}
-                        className="text-gray-500 hover:text-red-500 text-sm"
-                    >
-                      مسح الكل
-                    </button>
-                  </div>
-
-                  {notifications.length === 0 ? (
-                      <div className="text-center text-gray-500 py-4">
-                        <img
-                            src={NoNotification}
-                            alt="icon"
-                            className="w-[300px] h-[300px] flex-shrink-0 object-contain mr-10"
-                        />
-                      </div>
-                  ) : (
-                      <ul className="space-y-4 max-h-[400px] overflow-y-auto">
-                        {notifications.map((notification) => (
-                            <li
-                                key={notification.id}
-                                className="flex items-start justify-between p-3 rounded-lg shadow-sm"
-                            >
-                              <div className="flex items-center gap-3">
-                                <img
-                                    src={NotificationIcon}
-                                    alt="icon"
-                                    className="w-[50px] h-[50px] flex-shrink-0 object-contain"
-                                />
-                                <div>
-                                  <h4 className="font-semibold text-sm">{notification.title}</h4>
-                                  <p className="text-xs text-gray-600">{notification.message}</p>
-                                </div>
-                              </div>
-                              <button
-                                  onClick={() => handleRemoveNotification(notification.id)}
-                                  className="text-gray-400 hover:text-red-500 flex-shrink-0"
-                              >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
-                                  <path
-                                      fillRule="evenodd"
-                                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                      clipRule="evenodd"
-                                  />
-                                </svg>
-                              </button>
-                            </li>
-                        ))}
-                      </ul>
+          {/* Notifications - Only show for superadmin or admin with active status */}
+          {shouldShowBellIcon && (
+              <div className="relative">
+                <button onClick={handleToggleNotifications} disabled={isUser} className={`${isUser ? "cursor-not-allowed opacity-50" : ""}`}>
+                  <img src={bellIcon} alt="notifications" className="w-6 h-6" />
+                  {notifications.length > 0 && (
+                      <span className="absolute top-0 right-0 w-4 h-4 text-[10px] text-white bg-red-500 rounded-full flex items-center justify-center">
+                  {notifications.length}
+                </span>
                   )}
-                </div>
-            )}
-          </div>
+                </button>
 
-          {/* Language */}
-          <div className="hidden sm:flex items-center gap-2 text-sm text-grey-800">
+                {showNotifications && !isUser && (
+                    <div
+                        className="absolute top-[50px] left-5 w-[400px] bg-white rounded-lg shadow-lg z-50 p-4 animate-fade-in-down"
+                        dir="rtl"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-lg">قائمة الإشعارات</h3>
+                        <button
+                            onClick={handleClearAllNotifications}
+                            className="text-gray-500 hover:text-red-500 text-sm"
+                        >
+                          مسح الكل
+                        </button>
+                      </div>
+
+                      {notifications.length === 0 ? (
+                          <div className="text-center text-gray-500 py-4">
+                            <img
+                                src={NoNotification}
+                                alt="icon"
+                                className="w-[300px] h-[300px] flex-shrink-0 object-contain mr-10"
+                            />
+                          </div>
+                      ) : (
+                          <ul className="space-y-4 max-h-[400px] overflow-y-auto">
+                            {notifications.map((notification) => (
+                                <li
+                                    key={notification.id}
+                                    className="flex items-start justify-between p-3 rounded-lg shadow-sm"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <img
+                                        src={NotificationIcon}
+                                        alt="icon"
+                                        className="w-[50px] h-[50px] flex-shrink-0 object-contain"
+                                    />
+                                    <div>
+                                      <h4 className="font-semibold text-sm">{notification.title}</h4>
+                                      <p className="text-xs text-gray-600">{notification.message}</p>
+                                    </div>
+                                  </div>
+                                  <button
+                                      onClick={() => handleRemoveNotification(notification.id)}
+                                      className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                                  >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                      <path
+                                          fillRule="evenodd"
+                                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                          clipRule="evenodd"
+                                      />
+                                    </svg>
+                                  </button>
+                                </li>
+                            ))}
+                          </ul>
+                      )}
+                    </div>
+                )}
+              </div>
+          )}
+
+          {/* Language - Hidden for all users */}
+          {/* <div className="hidden sm:flex items-center gap-2 text-sm text-grey-800">
             <img src={flagIcon} alt="flag" className="w-5 h-5" />
             العربية
-          </div>
+          </div> */}
 
           {/* User Info */}
           <div
               className={`flex items-center gap-2 text-sm text-grey-800 ${
                   isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"
               }`}
-              onClick={() => !isUser && setShowProfileDialog(true)}
+              onClick={handleProfileClick}
           >
             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
               <img
@@ -197,13 +231,15 @@ const Topbar = () => {
               />
             </div>
             <div className="hidden md:flex flex-col items-end leading-tight">
-              <span className="font-bold text-sm">أحمد محسن</span>
+              <span className="font-bold text-sm">{displayName}</span>
             </div>
           </div>
         </div>
 
-        {/* Profile Dialog */}
-        {showProfileDialog && !isUser && <ContactUs onClose={() => setShowProfileDialog(false)} />}
+        {/* Profile Dialog - Only show if user is not an admin with active status */}
+        {showProfileDialog && !isUser && !(isAdmin && authUser?.company.status === "فعالة") && (
+            <ContactUs onClose={() => setShowProfileDialog(false)} />
+        )}
       </div>
   );
 };

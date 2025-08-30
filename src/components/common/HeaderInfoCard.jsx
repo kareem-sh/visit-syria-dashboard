@@ -1,6 +1,7 @@
 // src/components/common/HeaderInfoCard.jsx
 import React from 'react';
 import { Star, Calendar } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext.jsx'; // Import useAuth hook
 
 // Import all necessary icons
 import CompanyProfile from '@/assets/images/Company Profile.svg';
@@ -22,7 +23,10 @@ export default function HeaderInfoCard({
                                            date,
                                            status,
                                            onStatusChangeClick,
+                                           showStatusButton = true, // Add new prop to control button visibility
                                        }) {
+    const { isAdmin, isSuperAdmin } = useAuth(); // Get admin and super admin status
+
     if (!title) return null;
 
     const formattedDate = date ? new Date(date).toLocaleDateString('en-GB', {
@@ -46,6 +50,17 @@ export default function HeaderInfoCard({
 
     // Check if user is banned
     const isBanned = status === 'حظر مؤقت' || status === 'حظر نهائي';
+
+    // Handle button click based on user role
+    const handleButtonClick = () => {
+        if (isSuperAdmin) {
+            // Super admin - open status change dialog
+            onStatusChangeClick();
+        } else if (isAdmin) {
+            // Admin - do nothing for now (will be implemented later)
+            console.log("تغيير كلمة المرور button clicked - functionality to be implemented");
+        }
+    };
 
     return (
         <div className="bg-white px-10 py-6 min-h-[288px] rounded-2xl shadow-sm w-full flex items-center justify-between flex-wrap gap-4" dir="rtl">
@@ -72,11 +87,11 @@ export default function HeaderInfoCard({
             {/* Middle: Conditional Stats */}
             {entityType === 'company' && (
                 <div className="flex flex-col items-start gap-2 text-gray-600">
-                        <div className="flex items-center gap-2">
-                            <img src={trips}  alt={formattedDate} />
-                            <span className="font-semibold text-black text-lg">{stats ?? 0}</span>
-                            <span className="text-body-bold-16 text-black">رحلة</span>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <img src={trips}  alt={formattedDate} />
+                        <span className="font-semibold text-black text-lg">{stats ?? 0}</span>
+                        <span className="text-body-bold-16 text-black">رحلة</span>
+                    </div>
                     {formattedDate && (
                         <div className="flex items-center gap-2">
                             <img src={calender}  alt={formattedDate} />
@@ -95,12 +110,16 @@ export default function HeaderInfoCard({
                             {currentStatus.icon && <img src={currentStatus.icon} alt={currentStatus.text} className="ml-1 w-6 h-6" />}
                             {currentStatus.text}
                         </span>
-                        <button
-                            onClick={onStatusChangeClick}
-                            className="w-full cursor-pointer bg-green text-white px-5 py-3 rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200"
-                        >
-                            تغيير حالة الشركة
-                        </button>
+
+                        {/* Show appropriate button based on user role */}
+                        {showStatusButton && (
+                            <button
+                                onClick={handleButtonClick}
+                                className="w-full cursor-pointer bg-green text-white px-5 py-3 rounded-full text-body-bold-14 hover:shadow-lg transition-shadow duration-200"
+                            >
+                                {isSuperAdmin ? 'تغيير حالة الشركة' : 'تغيير كلمة المرور'}
+                            </button>
+                        )}
                     </>
                 )}
 

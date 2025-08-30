@@ -17,7 +17,7 @@ function formatTime(timeStr) {
     return timeStr;
 }
 
-export default function DayDetails({ days }) {
+export default function DayDetails({ days, className = "" }) {
     const [openDay, setOpenDay] = useState(null);
 
     // Transform the API data structure to match component expectations
@@ -33,7 +33,7 @@ export default function DayDetails({ days }) {
     })) || [];
 
     return (
-        <div className="cared bg-white rounded-2xl shadow-sm p-4 space-y-6">
+        <div className={`cared bg-white rounded-2xl shadow-sm p-4 space-y-6 ${className}`}>
             {transformedDays.map((day, index) => (
                 <div
                     key={index}

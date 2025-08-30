@@ -25,7 +25,7 @@ const ImageSection = ({ mainImage, secondaryImages = [], layout = "default" }) =
         <div className="flex flex-col gap-3 w-full">
             {/* Main Image */}
             <div
-                className="w-full aspect-[650/300] overflow-hidden rounded-xl shadow cursor-pointer"
+                className="w-full aspect-[650/300] h-[350px] overflow-hidden rounded-xl shadow cursor-pointer"
                 onClick={() => setZoomImage(mainImage)}
             >
                 <img
