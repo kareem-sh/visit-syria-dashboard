@@ -183,7 +183,7 @@ const DashboardOverview = () => {
                     <img
                         src={NoAccessImage}
                         alt="No access"
-                        className="w-60 h-60 sm:w-[22rem] sm:h-[22rem] object-contain"
+                        className="w-50 h-50 sm:w-[18rem] sm:h-[20rem] object-contain mt-10"
                     />
                     <p className="text-lg text-red-600 my-4">
                         قدّم طلب شركتك لكي تساهم في تعزيز السياحة في سوريا

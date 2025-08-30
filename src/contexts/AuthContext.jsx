@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
 
   // --- logout ---
   const logout = useCallback(() => {
+    console.log("Logging out user");
     // Clear state
     setUser(null);
     setToken(null);
@@ -49,7 +50,11 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem("authToken");
       const storedUser = localStorage.getItem("user");
 
+      console.log("Auth initialization - storedToken:", storedToken);
+      console.log("Auth initialization - storedUser:", storedUser);
+
       if (!storedToken) {
+        console.log("No stored token, cleaning up");
         // no token = clean state
         clearAPIToken();
         setUser(null);
@@ -64,7 +69,9 @@ export const AuthProvider = ({ children }) => {
       // use cached user immediately
       if (storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          console.log("Using cached user:", parsedUser);
+          setUser(parsedUser);
         } catch (e) {
           console.error("Failed to parse stored user:", e);
           localStorage.removeItem("user");
@@ -73,7 +80,9 @@ export const AuthProvider = ({ children }) => {
 
       // fetch fresh user
       try {
+        console.log("Fetching fresh user data with token");
         const userData = await getUserRoleAndData(storedToken);
+        console.log("Fresh user data received:", userData);
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         setError(null);
@@ -100,6 +109,9 @@ export const AuthProvider = ({ children }) => {
 
   // --- login ---
   const login = (userData, authToken) => {
+    console.log("Logging in user:", userData);
+    console.log("Auth token:", authToken);
+
     // clear any existing
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
@@ -112,6 +124,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("authToken", authToken);
     setError(null);
+
+    console.log("User logged in successfully");
   };
 
   // --- refresh user ---

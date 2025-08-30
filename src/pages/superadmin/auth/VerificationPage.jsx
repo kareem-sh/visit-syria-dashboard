@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { verify, resendVerification } from "@/services/auth/AuthApi";
+import { verify, resendVerification, getUserRoleAndData } from "@/services/auth/AuthApi";
+import { useAuth } from "@/contexts/AuthContext.jsx";
 import logo from "@/assets/images/logo.svg";
 
 export default function VerificationPage() {
@@ -12,6 +13,7 @@ export default function VerificationPage() {
     const [countdown, setCountdown] = useState(60);
     const location = useLocation();
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     // Get props from navigation state or use defaults
     const { title = "تغيير كلمة المرور", email = "" } = location.state || {};
@@ -23,12 +25,10 @@ export default function VerificationPage() {
     const generateRandomToken = () => {
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         let result = "";
-        const length = 152; // Typical FCM token length
-
+        const length = 152;
         for (let i = 0; i < length; i++) {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-
         return result;
     };
 
@@ -37,10 +37,6 @@ export default function VerificationPage() {
         if (!isPasswordReset) {
             const randomToken = generateRandomToken();
             setFcmToken(randomToken);
-        }
-
-        // Start the countdown timer (only for registration)
-        if (!isPasswordReset) {
             startCountdown();
         }
     }, [isPasswordReset]);
@@ -48,7 +44,6 @@ export default function VerificationPage() {
     // Countdown timer effect (only for registration)
     useEffect(() => {
         if (isPasswordReset) return;
-
         let timer;
         if (countdown > 0) {
             timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -66,13 +61,11 @@ export default function VerificationPage() {
     // React Query mutation for verification (only for registration)
     const verifyMutation = useMutation({
         mutationFn: async (data) => {
-            // Build FormData
             const form = new FormData();
             form.append("email", data.email);
             form.append("code", data.code);
             form.append("fcm_token", data.fcm_token);
 
-            // Log FormData being sent
             console.log("FormData being sent to API:");
             for (let [key, value] of form.entries()) {
                 console.log(`${key}: ${value}`);
@@ -80,33 +73,62 @@ export default function VerificationPage() {
 
             return await verify(form);
         },
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
             console.log("Verification successful", data);
 
-            // Store token and user data if available
-            if (data?.token) {
-                localStorage.setItem("authToken", data.token);
-            }
-            if (data?.user) {
-                localStorage.setItem("user", JSON.stringify(data.user));
+            // must have a token to proceed
+            if (!data?.token) {
+                setError("لم يتم استلام رمز الدخول. يرجى المحاولة مرة أخرى.");
+                return;
             }
 
-            // Redirect to dashboard after successful registration verification
-            navigate('/dashboard');
+            // If API returned a user object, use it. Otherwise fetch fresh user data using the token.
+            try {
+                let userToLogin = data.user ?? null;
+
+                if (!userToLogin) {
+                    // fetch user using token
+                    try {
+                        const fetchedUser = await getUserRoleAndData(data.token);
+                        userToLogin = fetchedUser;
+                    } catch (fetchErr) {
+                        console.error("Failed to fetch user after verification:", fetchErr);
+                        setError("فشل في تحميل بيانات المستخدم بعد التحقق. الرجاء المحاولة مرة أخرى.");
+                        return;
+                    }
+                }
+
+                // Use AuthContext login to set app state (this sets token, user and API token)
+                login(userToLogin, data.token);
+
+                // navigate to dashboard (SPA navigation)
+                navigate("/dashboard");
+            } catch (err) {
+                console.error("Error during post-verification login flow:", err);
+                setError("حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.");
+            }
         },
         onError: (error) => {
             console.error("Verification failed", error);
-            setError("حدث خطأ يرجى المحاولة لاحقا");
+            // Better error handling from server:
+            const serverMessage = error?.response?.data?.message;
+            const serverErrors = error?.response?.data?.errors;
+            if (serverErrors) {
+                const msgs = Object.values(serverErrors).flat();
+                setError(msgs.join(", ") || "رمز التحقق غير صحيح");
+            } else if (serverMessage) {
+                setError(serverMessage);
+            } else {
+                setError("حدث خطأ يرجى المحاولة لاحقا");
+            }
         },
     });
 
     // React Query mutation for resending verification code (only for registration)
     const resendMutation = useMutation({
         mutationFn: async (email) => {
-            // Build FormData
             const form = new FormData();
             form.append("email", email);
-
             return await resendVerification(form);
         },
         onSuccess: () => {
@@ -121,35 +143,27 @@ export default function VerificationPage() {
 
     const handleCodeChange = (e) => {
         const value = e.target.value;
-        // Allow only numbers and limit to 4 digits
         if (/^\d*$/.test(value) && value.length <= 4) {
             setVerificationCode(value);
-            setError(""); // Clear error when user types
+            setError("");
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validate the code is exactly 4 digits
         if (verificationCode.length !== 4) {
             setError("يجب أن يتكون الرمز من 4 أرقام");
             return;
         }
 
-        // For password reset flow, just navigate to reset password page
         if (isPasswordReset) {
-            // Navigate to reset password page with email and verification code
             navigate('/reset-password', {
-                state: {
-                    email: email,
-                    code: verificationCode
-                }
+                state: { email: email, code: verificationCode }
             });
             return;
         }
 
-        // For registration flow, call the verification API
         verifyMutation.mutate({
             email: email,
             code: verificationCode,
@@ -166,12 +180,10 @@ export default function VerificationPage() {
     return (
         <div className="min-h-screen flex items-center justify-center" dir="rtl">
             <div className="w-full max-w-3xl p-8">
-                {/* Logo Section - Centered */}
                 <div className="flex justify-center">
                     <img src={logo} alt={"visit syria logo"} className="w-[200px] h-[200px] pb-12" />
                 </div>
 
-                {/* Title - From navigation state */}
                 <h2 className="text-center text-h1-bold-24 font-bold text-green">
                     {title}
                 </h2>
@@ -182,9 +194,7 @@ export default function VerificationPage() {
                     </div>
                 )}
 
-                {/* Verification Form */}
                 <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-                    {/* Verification Code Input */}
                     <div className="space-y-2">
                         <label htmlFor="verificationCode" className="block text-right text-body-bold-14 text-gray-700">
                             الرمز التأكيدي* (4 أرقام)
@@ -204,7 +214,6 @@ export default function VerificationPage() {
                         />
                     </div>
 
-                    {/* Confirm Button */}
                     <button
                         type="submit"
                         disabled={!isPasswordReset && verifyMutation.isPending}
@@ -213,7 +222,6 @@ export default function VerificationPage() {
                         {!isPasswordReset && verifyMutation.isPending ? "جاري التحقق..." : "تأكيد"}
                     </button>
 
-                    {/* Resend Code Link (only for registration) */}
                     {!isPasswordReset && (
                         <div className="text-center mt-4">
                             <button
@@ -222,9 +230,7 @@ export default function VerificationPage() {
                                 disabled={resendDisabled || resendMutation.isPending}
                                 className="text-body-bold-16 text-green hover:text-[#257c71] bg-transparent border-none cursor-pointer disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
-                                {resendDisabled
-                                    ? `إعادة الإرسال (${countdown} ثانية)`
-                                    : "إعادة الإرسال"}
+                                {resendDisabled ? `إعادة الإرسال (${countdown} ثانية)` : "إعادة الإرسال"}
                             </button>
                         </div>
                     )}

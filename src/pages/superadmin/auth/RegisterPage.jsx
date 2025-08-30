@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { register } from "@/services/auth/AuthApi";
+import { useAuth } from "@/contexts/AuthContext.jsx";
 import logo from "@/assets/images/logo.svg";
 
 // SVG icon for open eye (visible password)
@@ -46,6 +47,7 @@ const EyeClosedIcon = ({ size = 20, ...props }) => (
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
     const [formData, setFormData] = useState({
@@ -64,7 +66,6 @@ export default function RegisterPage() {
             form.append("password", data.password);
             form.append("password_confirmation", data.password_confirmation);
 
-            // ✅ Log actual FormData being sent
             console.log("FormData being sent to API:");
             for (let [key, value] of form.entries()) {
                 console.log(`${key}: ${value}`);
@@ -72,16 +73,43 @@ export default function RegisterPage() {
 
             return await register(form);
         },
-        onSuccess: (data) => {
-            console.log("Registration successful", data);
+        onSuccess: (responseData) => {
+            console.log("Registration successful - Full response:", responseData);
+            console.log("Response keys:", Object.keys(responseData));
 
-            // Navigate to verification page with email and title
-            navigate("/verify", {
-                state: {
-                    title: "إنشاء حساب شركة",
-                    email: formData.email
-                }
-            });
+            // Check the actual response structure
+            const data = responseData;
+
+            // Debug: Check what properties exist
+            if (data.token) console.log("Token exists:", data.token);
+            if (data.user) console.log("User exists:", data.user);
+            if (data.data) console.log("Data exists:", data.data);
+
+            // Check various possible response structures
+            if (data.token && data.user) {
+                console.log("Logging in with direct token and user");
+                login(data.user, data.token);
+                navigate("/dashboard");
+            } else if (data.data?.token && data.data?.user) {
+                console.log("Logging in with nested token and user");
+                login(data.data.user, data.data.token);
+                navigate("/dashboard");
+            } else if (data.access_token) {
+                console.log("Logging in with access_token");
+                // If the token is named access_token instead of token
+                login(data.user || {}, data.access_token);
+                navigate("/dashboard");
+            } else {
+                console.log("No token found in registration response, navigating to verification");
+                // If no token is returned (normal case), navigate to verification page
+                navigate("/verify", {
+                    state: {
+                        title: "إنشاء حساب شركة",
+                        email: formData.email,
+                        fromRegistration: true // Add flag to indicate this came from registration
+                    }
+                });
+            }
         },
         onError: (error) => {
             console.error("Registration failed", error);
