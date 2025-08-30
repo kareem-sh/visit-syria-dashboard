@@ -28,15 +28,22 @@ export const createPlace = async (formData) => {
     }
 };
 
-// Update a place
 export const updatePlace = async (id, formData) => {
     try {
         const data = new FormData();
 
         Object.entries(formData).forEach(([key, value]) => {
             if (key === "images" && Array.isArray(value)) {
+                // Handle new image files
                 value.forEach((img, index) => {
-                    data.append(`images[${index}]`, img);
+                    if (img instanceof File) {
+                        data.append(`images[${index}]`, img);
+                    }
+                });
+            } else if (key === "old_images" && Array.isArray(value)) {
+                // Handle existing image URLs that should be kept
+                value.forEach((imgUrl, index) => {
+                    data.append(`old_images[${index}]`, imgUrl);
                 });
             } else if (value !== undefined && value !== null) {
                 data.append(key, value);

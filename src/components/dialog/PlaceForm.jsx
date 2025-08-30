@@ -42,7 +42,7 @@ const cities = [
   "حمص",
   "حماة",
   "اللاذقية",
-  "طرطус",
+  "طرطوس",
   "ادلب",
   "الرقة",
   "دير الزور",
@@ -51,14 +51,13 @@ const cities = [
   "السويداء",
 ];
 
-// Must match backend allowed values exactly
 const touristTags = [
   "ثقافية",
   "تاريخية",
   "دينية",
   "ترفيهية",
   "طبيعية",
-  "اثرية", // spelling must match backend validator
+  "اثرية",
 ];
 
 const toAbsoluteUrl = (u) => {
@@ -89,10 +88,22 @@ export default function PlaceForm({
 
       const images = (initialData.images || []).map((img) => {
         if (typeof img === "string") {
-          return { id: null, url: toAbsoluteUrl(img), file: null };
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            url: toAbsoluteUrl(img),
+            file: null,
+            isExisting: true,
+            toKeep: true
+          };
         }
         const url = toAbsoluteUrl(img.url || img.path || img.thumbnail || "");
-        return { id: img.id ?? null, url, file: null };
+        return {
+          id: img.id ?? Math.random().toString(36).substr(2, 9),
+          url,
+          file: null,
+          isExisting: true,
+          toKeep: true
+        };
       });
 
       return {
@@ -115,10 +126,8 @@ export default function PlaceForm({
 
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
-  const convertedExistingRef = useRef(false); // prevent repeat conversion
 
   useEffect(() => {
-    // revoke blob URLs on unmount / when images change
     return () => {
       formData.images.forEach((img) => {
         if (img.file && img.url && img.url.startsWith("blob:")) {
@@ -150,106 +159,12 @@ export default function PlaceForm({
     }
   }, [formData.type]);
 
-  /**
-   * NEW: In edit mode, convert existing image URLs to File objects (when possible)
-   * so submitFn always receives File objects for images.
-   *
-   * Behavior:
-   * - Runs once per component mount (convertedExistingRef stops repeats).
-   * - For each initial image that has a url and no file, attempt to fetch the URL,
-   *   create a File, and set it into formData.images[index].file.
-   * - If fetch fails (CORS / network), we keep the original url and leave file=null.
-   */
-  useEffect(() => {
-    if (!isEdit || !initialData || convertedExistingRef.current) return;
-    const initialImgs = initialData.images || [];
-    if (!initialImgs.length) {
-      convertedExistingRef.current = true;
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const conversions = await Promise.all(
-            initialImgs.map(async (img, idx) => {
-              const url = typeof img === "string" ? toAbsoluteUrl(img) : toAbsoluteUrl(img.url || img.path || img.thumbnail || "");
-              if (!url) return { index: idx, file: null };
-
-              try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error("fetch failed");
-                const blob = await res.blob();
-
-                // derive filename from url if possible
-                let filename = `existing-${idx}`;
-                try {
-                  const parsed = new URL(url);
-                  const parts = parsed.pathname.split("/");
-                  if (parts.length) {
-                    const last = parts.pop();
-                    if (last) filename = last.split("?")[0] || filename;
-                  }
-                } catch (e) {
-                  // ignore
-                }
-
-                const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
-                return { index: idx, file, url };
-              } catch (err) {
-                console.error("PlaceForm: failed to fetch image for conversion", url, err);
-                return { index: idx, file: null, url };
-              }
-            })
-        );
-
-        if (cancelled) return;
-
-        setFormData((prev) => {
-          // Use prev.images as base in case something else changed it
-          const images = (prev.images || []).slice();
-          // Ensure images length matches at least initialImgs length
-          for (let i = 0; i < conversions.length; i++) {
-            const c = conversions[i];
-            if (!images[i]) {
-              // create placeholder if missing
-              images[i] = { id: null, url: c.url || "", file: c.file ?? null };
-            } else {
-              if (c.file) {
-                images[i] = { ...images[i], file: c.file };
-              } else {
-                // leave existing url, file remains as-is (likely null)
-                images[i] = { ...images[i], url: images[i].url || c.url || images[i].url, file: images[i].file ?? null };
-              }
-            }
-          }
-          return { ...prev, images };
-        });
-
-      } finally {
-        convertedExistingRef.current = true;
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-    // Run only once for initialData + isEdit
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, initialData]);
-
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
     const MAX_IMAGES = 4;
-    const existingServerImages = formData.images.filter((img) => img.id);
-    const localFilesCount = formData.images.filter((img) => img.file).length;
-    const canAdd = Math.max(
-        0,
-        MAX_IMAGES - existingServerImages.length - localFilesCount
-    );
+    const canAdd = Math.max(0, MAX_IMAGES - formData.images.length);
 
     if (canAdd === 0) {
       toast.error("يمكنك رفع أربع صور كحد أقصى");
@@ -260,17 +175,14 @@ export default function PlaceForm({
     const newImages = files.slice(0, canAdd).map((file) => ({
       file,
       url: URL.createObjectURL(file),
-      id: null,
+      id: Math.random().toString(36).substr(2, 9),
+      isExisting: false,
+      toKeep: true
     }));
 
     setFormData((prev) => ({
       ...prev,
-      // Keep server images first, then local files, then newly added files
-      images: [
-        ...prev.images.filter((img) => img.id),
-        ...prev.images.filter((img) => !img.id),
-        ...newImages,
-      ],
+      images: [...prev.images, ...newImages],
     }));
 
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -280,11 +192,14 @@ export default function PlaceForm({
   const removeImage = (index) => {
     setFormData((prev) => {
       const imageToRemove = prev.images[index];
-      if (
-          imageToRemove?.file &&
-          imageToRemove.url &&
-          imageToRemove.url.startsWith("blob:")
-      ) {
+
+      if (imageToRemove.isExisting) {
+        // For existing images, remove them completely to free up space
+        return { ...prev, images: prev.images.filter((_, i) => i !== index) };
+      }
+
+      // For new images, remove them completely and revoke blob URL
+      if (imageToRemove?.file && imageToRemove.url && imageToRemove.url.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(imageToRemove.url);
         } catch {}
@@ -323,7 +238,6 @@ export default function PlaceForm({
     try {
       const payload = {};
 
-      // Append non-image fields
       Object.entries(formData).forEach(([key, value]) => {
         if (key === "images") return;
         if (key === "lat" || key === "lon") return;
@@ -331,7 +245,6 @@ export default function PlaceForm({
 
         let toAppend = value === null || value === undefined ? "" : value;
 
-        // For phone, combine country code and phone number
         if (key === "phone") {
           payload[key] = `${formData.country_code}${value}`;
           return;
@@ -340,23 +253,33 @@ export default function PlaceForm({
         payload[key] = String(toAppend);
       });
 
-      // classification
-      payload.classification =
-          formData.type === "tourist" ? formData.classification ?? "" : "";
+      payload.classification = formData.type === "tourist" ? formData.classification ?? "" : "";
 
-      // lat/lon
       payload.latitude = String(formData.lat ?? "");
       payload.longitude = String(formData.lon ?? "");
 
-      // Collect ALL images as File objects (existing + new)
-      const allFiles = (formData.images || [])
-          .filter((i) => i.file instanceof File) // only take those with a File
-          .map((i) => i.file);
+      if (isEdit) {
+        // For edit mode: only include existing images that are still present
+        const existingImagesToKeep = formData.images
+            .filter(img => img.isExisting && img.url)
+            .map(img => img.url);
 
-      payload.images = allFiles;
+        const newImages = formData.images
+            .filter(img => !img.isExisting && img.file instanceof File)
+            .map(img => img.file);
+
+        payload.old_images = existingImagesToKeep;
+        payload.images = newImages;
+      } else {
+        // For create mode: just add all images as files
+        const allFiles = formData.images
+            .filter(img => img.file instanceof File)
+            .map(img => img.file);
+
+        payload.images = allFiles;
+      }
 
       await submitFn(payload);
-      // Removed the toast.success call here to prevent double toast
       if (typeof onSuccess === "function") onSuccess();
     } catch (error) {
       console.error("Submission error:", error);
@@ -382,7 +305,6 @@ export default function PlaceForm({
       }
     }
   };
-  // ---------------------------------------------------------------------
 
   const validate = () => {
     const newErrors = {};
@@ -390,7 +312,10 @@ export default function PlaceForm({
     if (!formData.city_name) newErrors.city_name = "المدينة مطلوبة";
     if (formData.type !== "tourist" && !formData.phone?.trim()) newErrors.phone = "رقم الهاتف مطلوب";
     if (!formData.place?.trim()) newErrors.place = "الموقع مطلوب";
-    if (formData.images.length === 0) newErrors.images = "يجب رفع صورة واحدة على الأقل";
+
+    const hasImages = formData.images.length > 0;
+    if (!hasImages) newErrors.images = "يجب رفع صورة واحدة على الأقل";
+
     if (formData.type !== "tourist") {
       const n = Number(formData.number_of_branches);
       if (!n || n < 1) newErrors.number_of_branches = "عدد الفروع يجب أن يكون على الأقل 1";
@@ -403,14 +328,10 @@ export default function PlaceForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const baseInput =
-      "p-3 bg-white border rounded-xl focus:outline-none w-full transition text-right";
-  const validInput =
-      "border-gray-300 focus:ring-2 focus:ring-green focus:border-green";
-  const errorInput =
-      "border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500";
-  const fieldClass = (error) =>
-      `${baseInput} ${error ? errorInput : validInput}`;
+  const baseInput = "p-3 bg-white border rounded-xl focus:outline-none w-full transition text-right";
+  const validInput = "border-gray-300 focus:ring-2 focus:ring-green focus:border-green";
+  const errorInput = "border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500";
+  const fieldClass = (error) => `${baseInput} ${error ? errorInput : validInput}`;
 
   const imageCount = formData.images.length;
 
@@ -583,7 +504,7 @@ export default function PlaceForm({
               <div className="mt-2 flex flex-wrap gap-2">
                 {formData.images.map((img, index) => (
                     <div
-                        key={index}
+                        key={img.id}
                         className="relative w-[90px] h-[90px] border rounded-xl overflow-hidden group"
                     >
                       <img
@@ -601,6 +522,7 @@ export default function PlaceForm({
                             onClick={() => removeImage(index)}
                             className="p-2 bg-red-500 rounded-full hover:bg-red-600 text-white"
                             aria-label="حذف الصورة"
+                            title="حذف الصورة"
                         >
                           <Trash2 size={18} />
                         </button>
