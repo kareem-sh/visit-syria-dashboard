@@ -10,7 +10,7 @@ const Preloader = ({ dark = false }) => {
                 animationData={dark ? ArabicLogo /* or ArabicLogoWhite */ : ArabicLogo}
                 loop
                 autoplay
-                className="w-60 h-60"
+                className="w-100 h-100"
             />
         </div>
     );
