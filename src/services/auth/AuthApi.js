@@ -222,3 +222,20 @@ export const createCompany = async (formData) => {
         throw err;
     }
 };
+
+export const changePassword = async (formData) => {
+    try {
+        const response = await apiClient.post("/auth/changePassword", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        console.log("Change Password Success:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Change Password Error:", error.response?.data || error.message);
+        // Re-throw the error so React Query can catch it
+        throw error;
+    }
+};

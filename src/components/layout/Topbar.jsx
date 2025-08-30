@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSidebar } from "@/contexts/SidebarContext.jsx";
 import { useAuth } from "@/hooks/useAuth.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getAllUnreadNotifications, getAllReadNotifications, destroyNotification } from "@/services/notification/notification.js";
 import menuIcon from "@/assets/icons/sidebar/Sidebar 1.svg";
 import searchIcon from "@/assets/icons/sidebar/search.svg";
@@ -17,12 +17,15 @@ const Topbar = () => {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
   const { isUser, user: authUser, isAdmin, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [showSearchScreen, setShowSearchScreen] = useState(false);
 
   const notificationsRef = useRef(null);
+
+  // Check if current path is search page
+  const isSearchPage = location.pathname === '/search';
 
   // React Query for unread notifications
   const { data: unreadNotificationsData, isLoading: unreadLoading, refetch: refetchUnread } = useQuery({
@@ -102,7 +105,6 @@ const Topbar = () => {
   };
 
   const handleClearAllNotifications = () => {
-    // Delete all notifications one by one
     readNotifications.forEach(notification => {
       deleteNotificationMutation.mutate(notification.id);
     });
@@ -118,12 +120,23 @@ const Topbar = () => {
     }
   };
 
-  return showSearchScreen ? (
-      <SearchScreen onClose={() => setShowSearchScreen(false)} />
-  ) : (
+  const handleSearchClick = () => {
+    if (isUser) return;
+
+    // Navigate to search page
+    navigate('/search');
+  };
+
+  // If we're on the search page, don't render the Topbar at all
+  // The SearchScreen should be rendered by the router, not here
+  if (isSearchPage) {
+    return null; // Return null when on search page
+  }
+
+  return (
       <div
           dir="rtl"
-          className="fixed top-0 h-[72px] flex items-center justify-between px-4 sm:px-6 py-[14px] bg-[var(--bg-card)] z-9999 transition-all duration-300"
+          className="fixed top-0 h-[72px] flex items-center justify-between px-4 sm:px-6 py-[14px] bg-[var(--bg-card)] z-50 transition-all duration-300"
           style={{
             width: isSidebarOpen ? "calc(100% - 240px)" : "calc(100% - 72px)",
             right: isSidebarOpen ? "240px" : "72px",
@@ -149,7 +162,7 @@ const Topbar = () => {
             <input
                 type="text"
                 placeholder="البحث..."
-                onFocus={() => !isUser && setShowSearchScreen(true)}
+                onClick={handleSearchClick}
                 className={`w-full text-sm text-grey-800 bg-grey-100 rounded-xl focus:outline-none ${
                     isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                 }`}
@@ -158,6 +171,7 @@ const Topbar = () => {
                   padding: "10px 40px 10px 12px",
                 }}
                 disabled={isUser}
+                readOnly
             />
           </div>
         </div>
@@ -165,7 +179,11 @@ const Topbar = () => {
         {/* Mobile search icon */}
         {isTabletOrSmaller && (
             <div className="md:hidden flex items-center">
-              <button disabled={isUser} className={isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
+              <button
+                  onClick={handleSearchClick}
+                  disabled={isUser}
+                  className={isUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+              >
                 <img src={searchIcon} alt="search" className="w-6 h-6 opacity-50" />
               </button>
             </div>
@@ -184,8 +202,8 @@ const Topbar = () => {
                   <img src={bellIcon} alt="notifications" className="w-6 h-6" />
                   {unreadCount > 0 && (
                       <span className="absolute top-0 right-0 w-4 h-4 text-[10px] text-white bg-red-500 rounded-full flex items-center justify-center">
-                        {unreadCount}
-                      </span>
+                  {unreadCount}
+                </span>
                   )}
                 </button>
 

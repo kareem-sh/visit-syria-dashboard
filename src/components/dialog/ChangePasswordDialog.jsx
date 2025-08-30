@@ -2,18 +2,20 @@ import { useState } from "react";
 import { X, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 const ChangePasswordDialog = ({ onBack, onSubmit, onClose }) => {
+    const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit({ newPassword, confirmPassword });
+        onSubmit({ oldPassword, newPassword, confirmPassword });
     }
 
     return (
-        <div dir="rtl" className="bg-white p-8 z-[100000] rounded-2xl shadow-lg w-full max-w-md absolute animate-fade-in">
+        <div dir="rtl" className="bg-white p-8 z-[100000] rounded-2xl shadow-lg w-full max-w-lg absolute animate-fade-in">
             {/* Close Button */}
             <button
                 onClick={onClose}
@@ -34,12 +36,34 @@ const ChangePasswordDialog = ({ onBack, onSubmit, onClose }) => {
             </div>
 
             <p className="text-center text-gray-600 mb-6 text-body-regular-16">
-                يرجى إدخال كلمة مرور جديدة لحسابك
+                يرجى إدخال كلمة المرور القديمة والجديدة لتغيير كلمة المرور
             </p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Old Password Field */}
+                <div className="relative">
+                    <label className="block text-right text-body-bold-16 text-gray-700 mb-2">
+                        كلمة المرور القديمة*
+                    </label>
+                    <input
+                        type={showOldPassword ? 'text' : 'password'}
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        placeholder="كلمة المرور القديمة"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green text-right placeholder-gray-400"
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowOldPassword(!showOldPassword)}
+                        className="absolute left-3 top-11 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        {showOldPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                    </button>
+                </div>
+
                 {/* New Password Field */}
-                <div className="mb-4 relative">
+                <div className="relative">
                     <label className="block text-right text-body-bold-16 text-gray-700 mb-2">
                         كلمة المرور الجديدة*
                     </label>
@@ -60,12 +84,12 @@ const ChangePasswordDialog = ({ onBack, onSubmit, onClose }) => {
                     </button>
                 </div>
 
-                <p className="text-right text-xs text-gray-500 mb-4 -mt-2">
+                <p className="text-right text-xs text-gray-500 -mt-4">
                     يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة ورموز مميزة
                 </p>
 
                 {/* Confirm Password Field */}
-                <div className="mb-6 relative">
+                <div className="relative">
                     <label className="block text-right text-body-bold-16 text-gray-700 mb-2">
                         تأكيد كلمة المرور الجديدة*
                     </label>
@@ -89,9 +113,9 @@ const ChangePasswordDialog = ({ onBack, onSubmit, onClose }) => {
                 {/* Submit Button */}
                 <button
                     type="submit"
-                    className="w-full bg-green text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+                    className="w-full bg-green text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 mt-4"
                 >
-                    <span>تأكيد</span>
+                    <span>تأكيد تغيير كلمة المرور</span>
                     <ArrowLeft size={20} />
                 </button>
             </form>

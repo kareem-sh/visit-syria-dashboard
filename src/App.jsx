@@ -1,4 +1,3 @@
-// App.jsx
 import { Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import MainLayout from "@/components/layout/MainLayout";
@@ -9,6 +8,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import publicRoutes from "@/routes/publicRoutes";
 import ProtectedRoute from "@/routes/ProtectedRoutes";
 import AppRoutes from "@/routes/AppRoutes.jsx";
+
+// 👇 import Preloader
+import Preloader from "@/components/common/Preloader.jsx";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -21,6 +24,26 @@ const queryClient = new QueryClient({
 
 const App = () => {
     const { user } = useAuth();
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        // ✅ First, check if the flag exists
+        const hasSeenPreloader = sessionStorage.getItem("hasSeenPreloader");
+
+        if (!hasSeenPreloader) {
+            setLoading(true);
+            const timer = setTimeout(() => {
+                setLoading(false);
+                sessionStorage.setItem("hasSeenPreloader", "true"); // ✅ store the flag
+            }, 5100); // your Lottie duration
+
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    if (loading) {
+        return <Preloader />; // ✅ show Lottie preloader only once
+    }
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -38,7 +61,7 @@ const App = () => {
                 />
 
                 <Routes>
-                    {/* ✅ Public routes without MainLayout */}
+                    {/* Public routes without MainLayout */}
                     {publicRoutes.map((route, index) => (
                         <Route
                             key={index}
@@ -47,13 +70,16 @@ const App = () => {
                         />
                     ))}
 
-                    {/* ✅ All protected routes with MainLayout */}
+                    {/* Protected routes with MainLayout */}
                     <Route element={<MainLayout />}>
-                        <Route path="/*" element={
-                            <ProtectedRoute user={user}>
-                                <AppRoutes />
-                            </ProtectedRoute>
-                        } />
+                        <Route
+                            path="/*"
+                            element={
+                                <ProtectedRoute user={user}>
+                                    <AppRoutes />
+                                </ProtectedRoute>
+                            }
+                        />
                     </Route>
                 </Routes>
             </SidebarProvider>

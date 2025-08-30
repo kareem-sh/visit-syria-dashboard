@@ -21,6 +21,7 @@
     "chart.js": "^4.5.0",
     "framer-motion": "^12.23.12",
     "leaflet": "^1.9.4",
+    "lottie-react": "^2.4.1",
     "lottie-web": "^5.13.0",
     "lucide-react": "^0.541.0",
     "motion": "^12.23.12",
